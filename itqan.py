@@ -211,37 +211,4 @@ st.markdown(
     }
     </style>
     """,
-    unsafe_allow_html=True
-)
-
-# 3. الهيدر الرئيسي للمكتب (بالاسم الجديد والتنسيق المخصص)
-st.markdown(
-    """
-    <div style="background-color: #A47551; padding: 25px; border-radius: 12px; text-align: center; margin-bottom: 30px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
-        <h1 style="color: #FFFFFF; margin: 0; font-size: 28px; font-weight: bold;">أتقان للمحاماه والاستشارات القانونيه والتحكيم</h1>
-        <h2 style="color: #F5EFEB; margin: 10px 0 0 0; font-size: 20px;">الدكتور صلاح حسب الله</h2>
-    </div>
-    """,
-    unsafe_allow_html=True
-)
-
-# =========================================================
-# هنا تضع كود مشروعك السابق (أزرار، حقول إدخال، إلخ...)
-# كمثال توضيحي للهيكل الجديد:
-# =========================================================
-
-st.write("### مرحباً بكم في المنصة الإلكترونية لمكتب الدكتور صلاح حسب الله")
-st.info("تم تحديث النظام بالهوية البصرية الجديدة والألوان المعتمدة (البني الفاتح والأبيض).")
-
-col1, col2 = st.columns(2)
-with col1:
-    st.text_input("اسم العميل:")
-with col2:
-    st.text_input("رقم القضية:")
-
-if st.button("بحث وتحديث البيانات"):
-    st.success("تم تشغيل الزر بنجاح طبقاً للثيم الجديد!")
-
-# 📝 إمضاء وتذييل الصفحة في الأسفل
-st.markdown("---")
-st.markdown("<p style='text-align: center; font-size: 16px; color: #6B7280; font-weight: bold;'>Eng.Madbouly Mahmoud , قسم تكنولوجيا المعلومات</p>", unsafe_allow_html=True)
+    unsafe_allow_html=True)
