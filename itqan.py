@@ -181,13 +181,7 @@ with tab2:
             # درجات الألوان البنية المتناسقة حسب حالة التذكرة
             bg_color = "#F5EBE0" if "Pending" in status_str else ("#E3D5CA" if "In Progress" in status_str else "#EDF2F4")
             border_color = "#A06040" if "Pending" in status_str else ("#D4A373" if "In Progress" in status_str else "#606C38")
-            
-            t_created = t.get('created_at', 'تاريخ قديم')
-            t_updated = t.get('updated_at', 'لم تُحدث')
-            
-            st.markdown(f"""
-                <div style='background-color: {bg_color}; padding: 15px; border-radius: 8px; border-right: 6px solid {border_color}; margin-bottom: 15px; box-shadow: 0 2px 4px rgba(0,0,0,0.02);'>
-                    <h4 style='margin: 0; color: #4A3728;'>📍 بلاغ رقم #{int(t['ID'])} <span style='float: left; font-size: 12px; color: #7F6A59;'>📅 تاريخ الإرسال: {t_created}</span></h4>
-                    <p style='margin: 5px 0; color: #2F2219;'><b>👤 المرسل:</b> {t['name']} | <b>🏢 القسم:</b> {t['dept']}</p>
-                    <p style='margin: 5px 0; color: #2F2219;'><b>📋 وصف المشكلة:</b> {t['issue']}</p>
-                    <p style='margin: 5px 0; color: {border_color}; font-weight: bold;'><b>⚡ الحالة الحالية:</b> {t['status']}</p>
+   st.markdown(f"""
+هنا يكتب النص الخاص بك
+ويمكنك وضع متغيرات داخل أقواس مجعدة مثل {variable}
+""") # تأكد من وجود علامات الإغلاق الثلاث والقوس هنا
