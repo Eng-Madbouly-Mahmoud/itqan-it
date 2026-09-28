@@ -40,19 +40,40 @@ if 'next_id' not in st.session_state:
 st.set_page_config(page_title="مركز الدعم الفني - شركة إتقان", page_icon="⚖️", layout="wide")
 
 # =========================================================
-# 💻 محتوى نظام شركة إتقان للمحاماة
+# 💻 محتوى نظام شركة إتقان للمحاماة (التصميم البني الجديد)
 # =========================================================
 
-# تصميم الهيدر مع الشريط الترحيبي لشركة إتقان والدكتور صلاح حسب الله
+# تصميم الهيدر مع اللوجو المدمج والشريط الترحيبي باللون البني والبيج الفخم
 st.markdown("""
-    <div style='background-color: #1E3A8A; padding: 20px; border-radius: 10px; margin-bottom: 5px;'>
-        <h1 style='text-align: center; color: white; margin: 0;'>لوحة تكنولوجيا المعلومات والشبكات ⚙️</h1>
+    <div style='background-color: #8C6239; padding: 25px; border-radius: 12px; margin-bottom: 5px; display: flex; align-items: center; justify-content: center; gap: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);'>
+        <!-- لوجو ميزان العدالة مدمج برمجياً بصيغة SVG -->
+        <svg width="60" height="60" viewBox="0 0 24 24" fill="none" xmlns="http://w3.org" style='filter: drop-shadow(0px 2px 4px rgba(0,0,0,0.3));'>
+            <path d="M12 2V22M12 5H5M12 5H19M5 5L3 13M19 5L21 13M3 13C3 15 5 15 5 15C5 15 7 15 7 13M21 13C21 15 19 15 19 15C19 15 17 15 17 13M5 15V18C5 19.1 5.9 20 7 20H17C18.1 20 19 19.1 19 18V15" stroke="#F5EBE0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M9 22H15" stroke="#F5EBE0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <div>
+            <h1 style='text-align: center; color: #F5EBE0; margin: 0; font-family: "Cairo", sans-serif; font-size: 32px; font-weight: bold;'>لوحة تكنولوجيا المعلومات والشبكات ⚙️</h1>
+            <p style='text-align: center; color: #E3D5CA; margin: 5px 0 0 0; font-size: 14px;'>المكتب الذكي لإدارة ومتابعة البلاغات التقنية</p>
+        </div>
     </div>
-    <div style='background-color: #0F172A; padding: 8px; border-radius: 5px; margin-bottom: 20px;'>
-        <marquee direction='right' style='color: #38BDF8; font-weight: bold; font-size: 16px; margin: 0;'>
+    <div style='background-color: #D5BDAF; padding: 10px; border-radius: 8px; margin-bottom: 25px; text-align: center; box-shadow: 0 2px 4px rgba(0,0,0,0.05);'>
+        <marquee direction='right' style='color: #4A3728; font-weight: bold; font-size: 16px; margin: 0;'>
             ⚖️ شركة إتقان للمحاماة والاستشارات القانونية (د. صلاح حسب الله) ترحب بكم .. يرجى تسجيل بلاغات الأعطال بدقة لسرعة توجيه مهندس الـ IT إليكم فوراً 🛠️
         </marquee>
     </div>
+""", unsafe_allow_html=True)
+
+# تخصيص ألوان التبويبات (Tabs) لتتناسب مع الطابع البني من خلال CSS
+st.markdown("""
+    <style>
+    .stTabs [data-baseweb="tab-list"] { gap: 10px; }
+    .stTabs [data-baseweb="tab"] {
+        background-color: #E3D5CA; border-radius: 4px 4px 0px 0px; padding: 10px 20px; color: #4A3728; font-weight: bold;
+    }
+    .stTabs [aria-selected="true"] { 
+        background-color: #8C6239 !important; color: #F5EBE0 !important;
+    }
+    </style>
 """, unsafe_allow_html=True)
 
 # إنشاء التبويبات العلوية للموقع
@@ -60,7 +81,7 @@ tab1, tab2 = st.tabs(["📝 بوابة الموظفين والمستشارين (
 
 # 📝 بوابة الموظفين
 with tab1:
-    st.markdown("<h3 style='text-align: right; color: #1E3A8A;'>📥 تسجيل بلاغ عطل تقني جديد في النظام</h3>", unsafe_allow_html=True)
+    st.markdown("<h3 style='text-align: right; color: #8C6239;'>📥 تسجيل بلاغ عطل تقني جديد في النظام</h3>", unsafe_allow_html=True)
     st.write("برجاء ملء الخانات التالية بدقة ليتم توجيه الدعم الفني إليك فوراً لتجنب تعطيل العمل القانوني:")
     
     with st.form("ticket_form", clear_on_submit=True):
@@ -102,7 +123,7 @@ with tab1:
 
 # 🖥️ لوحة تحكم الـ IT
 with tab2:
-    st.markdown("<h3 style='text-align: right; color: #16A34A;'>🖥️ شاشة مراقبة وحل الأعطال الحالية</h3>", unsafe_allow_html=True)
+    st.markdown("<h3 style='text-align: right; color: #8C6239;'>🖥️ شاشة مراقبة وحل الأعطال الحالية</h3>", unsafe_allow_html=True)
     
     password = st.text_input("🔑 أدخل كلمة مرور الإدارة لتحديث التذاكر:", type="password")
     
@@ -157,18 +178,16 @@ with tab2:
         
         for t in st.session_state.tickets:
             status_str = str(t['status'])
-            bg_color = "#FEF2F2" if "Pending" in status_str else ("#FEF3C7" if "In Progress" in status_str else "#F0FDF4")
-            border_color = "#DC2626" if "Pending" in status_str else ("#D97706" if "In Progress" in status_str else "#16A34A")
+            # درجات الألوان البنية المتناسقة حسب حالة التذكرة
+            bg_color = "#F5EBE0" if "Pending" in status_str else ("#E3D5CA" if "In Progress" in status_str else "#EDF2F4")
+            border_color = "#A06040" if "Pending" in status_str else ("#D4A373" if "In Progress" in status_str else "#606C38")
             
             t_created = t.get('created_at', 'تاريخ قديم')
             t_updated = t.get('updated_at', 'لم تُحدث')
             
             st.markdown(f"""
-                <div style='background-color: {bg_color}; padding: 15px; border-radius: 8px; border-right: 5px solid {border_color}; margin-bottom: 15px;'>
-                    <h4 style='margin: 0; color: #1E3A8A;'>📍 بلاغ رقم #{int(t['ID'])} <span style='float: left; font-size: 12px; color: #6B7280;'>📅 تاريخ الإرسال: {t_created}</span></h4>
-                    <p style='margin: 5px 0;'><b>👤 المرسل:</b> {t['name']} | <b>🏢 القسم:</b> {t['dept']}</p>
-                    <p style='margin: 5px 0;'><b>📋 وصف المشكلة:</b> {t['issue']}</p>
-                    <p style='margin: 5px 0; color: {border_color};'><b>⚡ الحالة الحالية:</b> {t['status']}</p>
-                    <p style='margin: 0; color: #4B5563;'><b>👨‍💻 القائم بالحل:</b> {t['solved_by']} <span style='float: left; font-size: 12px; color: #9CA3AF;'>⏱️ آخر تحديث: {t_updated}</span></p>
-                </div>
-            """, unsafe_allow_html=True)
+                <div style='background-color: {bg_color}; padding: 15px; border-radius: 8px; border-right: 6px solid {border_color}; margin-bottom: 15px; box-shadow: 0 2px 4px rgba(0,0,0,0.02);'>
+                    <h4 style='margin: 0; color: #4A3728;'>📍 بلاغ رقم #{int(t['ID'])} <span style='float: left; font-size: 12px; color: #7F6A59;'>📅 تاريخ الإرسال: {t_created}</span></h4>
+                    <p style='margin: 5px 0; color: #2F2219;'><b>👤 المرسل:</b> {t['name']} | <b>🏢 القسم:</b> {t['dept']}</p>
+                    <p style='margin: 5px 0; color: #2F2219;'><b>📋 وصف المشكلة:</b> {t['issue']}</p>
+                    <p style='margin: 5px 0; color: {border_color}; font-weight: bold;'><b>⚡ الحالة الحالية:</b> {t['status']}</p>
