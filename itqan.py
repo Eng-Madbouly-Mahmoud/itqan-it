@@ -166,6 +166,81 @@ with tab2:
                     <p style='margin: 0; color: #4B5563;'><b>👨‍💻 القائم بالحل:</b> {t['solved_by']} <span style='float: left; font-size: 12px; color: #9CA3AF;'>⏱️ آخر تحديث: {t_updated}</span></p>
                 </div>
             """, unsafe_allow_html=True)
+import streamlit as st
+
+# 1. إعدادات الصفحة (تظهر في تبويب المتصفح)
+st.set_page_config(
+    page_title="أتقان للمحاماه والاستشارات القانونيه والتحكيم",
+    page_icon="⚖️",
+    layout="wide",
+    initial_sidebar_state="expanded"
+)
+
+# 2. حقن الألوان الجديدة (البني الفاتح والأبيض) في كامل التطبيق لتغيير الثيم الافتراضي
+st.markdown(
+    """
+    <style>
+    /* تغيير خلفية التطبيق الأساسية إلى الأبيض والنصوص إلى البني الداكن */
+    .stApp {
+        background-color: #FFFFFF;
+        color: #3E2723;
+    }
+    
+    /* تنسيق القائمة الجانبية (Sidebar) باللون البني الفاتح جداً */
+    [data-testid="stSidebar"] {
+        background-color: #F5EFEB;
+    }
+    
+    /* تنسيق الأزرار لتصبح باللون البني الفاتح والكتابة باللون الأبيض */
+    div.stButton > button:first-child {
+        background-color: #A47551;
+        color: white;
+        border-radius: 8px;
+        border: none;
+    }
+    div.stButton > button:first-child:hover {
+        background-color: #8C5E3C;
+        color: white;
+    }
+    
+    /* توحيد نوع الخط ودعم النصوص العربية */
+    html, body, [class*="css"]  {
+        font-family: 'Cairo', sans-serif;
+        text-align: right;
+        direction: rtl;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True
+)
+
+# 3. الهيدر الرئيسي للمكتب (بالاسم الجديد والتنسيق المخصص)
+st.markdown(
+    """
+    <div style="background-color: #A47551; padding: 25px; border-radius: 12px; text-align: center; margin-bottom: 30px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+        <h1 style="color: #FFFFFF; margin: 0; font-size: 28px; font-weight: bold;">أتقان للمحاماه والاستشارات القانونيه والتحكيم</h1>
+        <h2 style="color: #F5EFEB; margin: 10px 0 0 0; font-size: 20px;">الدكتور صلاح حسب الله</h2>
+    </div>
+    """,
+    unsafe_allow_html=True
+)
+
+# =========================================================
+# هنا تضع كود مشروعك السابق (أزرار، حقول إدخال، إلخ...)
+# كمثال توضيحي للهيكل الجديد:
+# =========================================================
+
+st.write("### مرحباً بكم في المنصة الإلكترونية لمكتب الدكتور صلاح حسب الله")
+st.info("تم تحديث النظام بالهوية البصرية الجديدة والألوان المعتمدة (البني الفاتح والأبيض).")
+
+col1, col2 = st.columns(2)
+with col1:
+    st.text_input("اسم العميل:")
+with col2:
+    st.text_input("رقم القضية:")
+
+if st.button("بحث وتحديث البيانات"):
+    st.success("تم تشغيل الزر بنجاح طبقاً للثيم الجديد!")
 
 # 📝 إمضاء وتذييل الصفحة في الأسفل
 st.markdown("---")
