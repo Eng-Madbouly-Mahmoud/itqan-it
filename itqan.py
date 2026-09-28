@@ -35,13 +35,15 @@ if 'next_id' not in st.session_state:
         st.session_state.next_id = max_id + 1
     else:
         st.session_state.next_id = 101
+
 # إعدادات الصفحة والأيقونة الرئيسية للموقع
 st.set_page_config(
     page_title="الدكتور صلاح حسب الله - مركز الدعم الفني - شركة إتقان",
     page_icon="⚖️",
     layout="wide"
 )
-=====================================
+
+# =========================================================
 # 💻 محتوى نظام شركة إتقان للمحاماة (التصميم البني الجديد)
 # =========================================================
 
@@ -60,7 +62,7 @@ st.markdown("""
     </div>
     <div style='background-color: #D5BDAF; padding: 10px; border-radius: 8px; margin-bottom: 25px; text-align: center; box-shadow: 0 2px 4px rgba(0,0,0,0.05);'>
         <marquee direction='right' style='color: #4A3728; font-weight: bold; font-size: 16px; margin: 0;'>
-            ⚖️ ITشركة إتقان للمحاماة والاستشارات القانونية (د. صلاح حسب الله) ترحب بكم .. يرجى تسجيل بلاغات الأعطال بدقة لسرعة توجيه مهندس الـ IT إليكم فوراً 🛠️
+            ⚖️ شركة إتقان للمحاماة والاستشارات القانونية (د. صلاح حسب الله) ترحب بكم .. يرجى تسجيل بلاغات الأعطال بدقة لسرعة توجيه مهندس الـ IT إليكم فوراً 🛠️
         </marquee>
     </div>
 """, unsafe_allow_html=True)
@@ -172,27 +174,11 @@ with tab2:
         st.error("❌ كلمة المرور غير صحيحة! لا تملك صلاحية تعديل التذاكر.")
 
     # عرض التذاكر المتاحة بشكل منظم
+    st.markdown("### 📋 قائمة البلاغات الحالية في النظام")
     if not st.session_state.tickets:
-        st.info("💡 لا توجد بلاغات أو أعطال مسجلة حالياً. جميع الأنظمة والأجهزة بالمكتب تعمل بكفاءة!")
+        st.info("💡 لا توجد تذاكر أو بلاغات مسجلة حالياً.")
     else:
-        st.write(f"إجمالي الأعطال المسجلة حالياً: **{len(st.session_state.tickets)}** بلاغ.")
-        st.markdown("---")
-        for t in st.session_state.tickets:
-            status_str = str(t['status'])
-            # درجات الألوان البنية المتناسقة حسب حالة التذكرة
-            bg_color = "#F5EBE0" if "Pending" in status_str else ("#E3D5CA" if "In Progress" in status_str else "#EDF2F4")
-            border_color = "#A06040" if "Pending" in status_str else ("#D4A373" if "In Progress" in status_str else "#606C38")
-            
-            t_created = t.get('created_at', 'تاريخ قديم')
-            t_updated = t.get('updated_at', 'لم تُحدث')
-            
-            # هنا تم إصلاح المحاذاة وإغلاق النص الممتد والقوس بشكل سليم
-            st.markdown(f"""
-                <div style='background-color: {bg_color}; padding: 15px; border-radius: 8px; border-right: 6px solid {border_color}; margin-bottom: 15px; box-shadow: 0 2px 4px rgba(0,0,0,0.02);'>
-                    <h4 style='margin: 0; color: #4A3728;'>📍 بلاغ رقم #{int(t['ID'])} <span style='float: left; font-size: 12px; color: #7F6A59;'>📅 تاريخ الإرسال: {t_created}</span></h4>
-                    <p style='margin: 5px 0; color: #2F2219;'><b>👤 المرسل:</b> {t['name']} | <b>🏢 القسم:</b> {t['dept']}</p>
-                    <p style='margin: 5px 0; color: #2F2219;'><b>📋 وصف المشكلة:</b> {t['issue']}</p>
-                    <p style='margin: 5px 0; color: {border_color}; font-weight: bold;'><b>⚡ الحالة الحالية:</b> {t['status']}</p>
-                    <p style='margin: 0; color: #5C4D41;'><b>👨‍💻 القائم بالحل:</b> {t['solved_by']} <span style='float: left; font-size: 12px; color: #8E7C6E;'>⏱️ آخر تحديث: {t_updated}</span></p>
-                </div>
-            """, unsafe_allow_html=True)
+        df_display = pd.DataFrame(st.session_state.tickets)
+        # إعادة ترتيب الأعمدة لتظهر للمهندس بشكل منظم ومفهوم
+        df_display.columns = ["رقم التذكرة", "اسم الموظف", "القسم", "وصف المشكلة", "الحالة", "المسؤول عن الحل", "تاريخ الإنشاء", "آخر تحديث"]
+        st.dataframe(df_display, use_container_width=True)
