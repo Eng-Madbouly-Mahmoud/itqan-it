@@ -38,7 +38,7 @@ if 'next_id' not in st.session_state:
 
 # إعدادات الصفحة والأيقونة الرئيسية للموقع
 st.set_page_config(page_title="مركز الدعم الفني - شركة إتقان", page_icon="⚖️", layout="wide")
-
+الدكتور صلاح حسب الله
 # =========================================================
 # 💻 محتوى نظام شركة إتقان للمحاماة (التصميم البني الجديد)
 # =========================================================
@@ -58,7 +58,7 @@ st.markdown("""
     </div>
     <div style='background-color: #D5BDAF; padding: 10px; border-radius: 8px; margin-bottom: 25px; text-align: center; box-shadow: 0 2px 4px rgba(0,0,0,0.05);'>
         <marquee direction='right' style='color: #4A3728; font-weight: bold; font-size: 16px; margin: 0;'>
-            ⚖️ شركة إتقان للمحاماة والاستشارات القانونية (د. صلاح حسب الله) ترحب بكم .. يرجى تسجيل بلاغات الأعطال بدقة لسرعة توجيه مهندس الـ IT إليكم فوراً 🛠️
+            ⚖️ ITشركة إتقان للمحاماة والاستشارات القانونية (د. صلاح حسب الله) ترحب بكم .. يرجى تسجيل بلاغات الأعطال بدقة لسرعة توجيه مهندس الـ IT إليكم فوراً 🛠️
         </marquee>
     </div>
 """, unsafe_allow_html=True)
