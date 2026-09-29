@@ -1,39 +1,65 @@
 import streamlit as st
 from datetime import datetime
-import pandas as pd
-import os
+from supabase import create_client, Client
 
-# اسم الملف الخارجي الثابت لحفظ البيانات على السيرفر
-DATA_FILE = "tickets.csv"
+# 🔑 إعدادات الاتصال بقاعدة بيانات Supabase السحابية
+SUPABASE_URL = "https://stejbrmfjreoguuxohsr.supabase.co"
+SUPABASE_KEY = "sb_publishable_8TDCSTDd7rjdcj9r5VyEeQ_NYvR-F3o"
 
-# دالة ذكية لتحميل البيانات من ملف CSV
+# تهيئة عميل Supabase لمرة واحدة في الجلسة
+@st.cache_resource
+def get_supabase_client() -> Client:
+    return create_client(SUPABASE_URL, SUPABASE_KEY)
+
+supabase = get_supabase_client()
+
+# 📥 دالة جلب البيانات من قاعدة البيانات السحابية Supabase
 def load_data():
-    if os.path.exists(DATA_FILE):
-        try:
-            df = pd.read_csv(DATA_FILE)
-            # التأكد من تحويل الأعمدة الرقمية لمنع المشاكل في الـ ID
-            if not df.empty and 'ID' in df.columns:
-                df['ID'] = df['ID'].astype(int)
-            return df.to_dict(orient="records")
-        except:
-            return []
-    return []
+    try:
+        response = supabase.table("tickets").select("*").order("id", ascending=True).execute()
+        tickets = []
+        for row in response.data:
+            ticket = row.copy()
+            ticket['ID'] = row['id']  # تحويل id الصغير إلى ID الكبير ليتوافق مع كودك
+            tickets.append(ticket)
+        return tickets
+    except Exception as e:
+        st.error(f"خطأ في جلب البيانات من السيرفر: {e}")
+        return []
 
-# دالة لحفظ البيانات إلى ملف CSV فوراً عند أي تعديل
-def save_data(tickets_list):
-    if tickets_list:
-        df = pd.DataFrame(tickets_list)
-        df.to_csv(DATA_FILE, index=False, encoding="utf-8-sig")
-    else:
-        # إذا كانت القائمة فارغة، يتم إنشاء ملف بهيكلية الأعمدة فقط
-        columns = ["ID", "name", "dept", "issue", "status", "solved_by", "created_at", "updated_at"]
-        pd.DataFrame(columns=columns).to_csv(DATA_FILE, index=False, encoding="utf-8-sig")
+# 💾 دالة حفظ تذكرة جديدة مباشرة في السحاب
+def insert_ticket(new_ticket):
+    try:
+        db_data = {
+            "id": int(new_ticket["ID"]),
+            "name": new_ticket["name"],
+            "dept": new_ticket["dept"],
+            "issue": new_ticket["issue"],
+            "status": new_ticket["status"],
+            "solved_by": new_ticket["solved_by"],
+            "created_at": new_ticket["created_at"],
+            "updated_at": new_ticket["updated_at"]
+        }
+        supabase.table("tickets").insert(db_data).execute()
+        return True
+    except Exception as e:
+        st.error(f"خطأ في حفظ التذكرة: {e}")
+        return False
 
-# تهيئة مخزن البيانات وقراءة الملف الخارجي لضمان بقائها بعد الريبوت
+# 🔄 دالة تحديث حالة تذكرة قائمة في السحاب
+def update_ticket_in_db(ticket_id, updated_fields):
+    try:
+        supabase.table("tickets").update(updated_fields).eq("id", ticket_id).execute()
+        return True
+    except Exception as e:
+        st.error(f"خطأ في تحديث التذكرة: {e}")
+        return False
+
+# تهيئة مخزن البيانات وجلب التذاكر من السحاب عند تشغيل الموقع
 if 'tickets' not in st.session_state:
     st.session_state.tickets = load_data()
 
-# ضبط الترقيم التلقائي للتذاكر
+# ضبط الترقيم التلقائي للتذاكر بناءً على آخر تذكرة في السحاب
 if 'next_id' not in st.session_state:
     if st.session_state.tickets:
         max_id = max([int(t['ID']) for t in st.session_state.tickets])
@@ -52,10 +78,8 @@ st.set_page_config(
 # 💻 محتوى نظام شركة إتقان للمحاماة (التصميم البني الجديد)
 # =========================================================
 
-# تصميم الهيدر مع اللوجو المدمج والشريط الترحيبي باللون البني والبيج الفخم
 st.markdown("""
     <div style='background-color: #8C6239; padding: 25px; border-radius: 12px; margin-bottom: 5px; display: flex; align-items: center; justify-content: center; gap: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);'>
-        <!-- لوجو ميزان العدالة مدمج برمجياً بصيغة SVG -->
         <svg width="60" height="60" viewBox="0 0 24 24" fill="none" xmlns="http://w3.org" style='filter: drop-shadow(0px 2px 4px rgba(0,0,0,0.3));'>
             <path d="M12 2V22M12 5H5M12 5H19M5 5L3 13M19 5L21 13M3 13C3 15 5 15 5 15C5 15 7 15 7 13M21 13C21 15 19 15 19 15C19 15 17 15 17 13M5 15V18C5 19.1 5.9 20 7 20H17C18.1 20 19 19.1 19 18V15" stroke="#F5EBE0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
             <path d="M9 22H15" stroke="#F5EBE0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
@@ -72,7 +96,6 @@ st.markdown("""
     </div>
 """, unsafe_allow_html=True)
 
-# تخصيص ألوان التبويبات (Tabs) لتتناسب مع الطابع البني من خلال CSS
 st.markdown("""
     <style>
     .stTabs [data-baseweb="tab-list"] { gap: 10px; }
@@ -85,7 +108,6 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# إنشاء التبويبات العلوية للموقع
 tab1, tab2 = st.tabs(["📝 بوابة الموظفين والمستشارين (تسجيل عطل)", "🖥️ لوحة تحكم الـ IT (إدارة التذاكر)"])
 
 # 📝 بوابة الموظفين
@@ -96,16 +118,9 @@ with tab1:
     with st.form("ticket_form", clear_on_submit=True):
         name = st.text_input("👤 اسم الموظف / المستشار بالكامل:")
         dept = st.selectbox("🏢 القسم / الإدارة التابع لها:", [
-            "قسم الاداره العليا", 
-            "بنك مصر", 
-            "بنك الاهلي", 
-            "التجاري الدولي", 
-            "الادمن", 
-            "إدارة عامة", 
-            "أخرى"
+            "قسم الاداره العليا", "بنك مصر", "بنك الاهلي", "التجاري الدولي", "الادمن", "إدارة عامة", "أخرى"
         ])
-        issue = st.text_area("⚠️ وصف العطل أو المشكلة التقنية بالتفصيل (مثل: مشكلة بالطابعة، انقطاع شبكة، عطل ببرامج الأرشيف):")
-        
+        issue = st.text_area("⚠️ وصف العطل أو المشكلة التقنية بالتفصيل:")
         submit = st.form_submit_button("🚀 إرسال التذكرة إلى قسم الدعم الفني")
         
         if submit:
@@ -122,45 +137,35 @@ with tab1:
                     "created_at": current_time,
                     "updated_at": "لم تُحدث بعد"
                 }
-                st.session_state.tickets.append(new_ticket)
-                # حفظ فوري في ملف الـ CSV
-                save_data(st.session_state.tickets)
                 
-                st.success(f"🎉 تم تسجيل بلاغك بنجاح! رقم التذكرة الخاص بك هو: #{st.session_state.next_id}")
-                st.session_state.next_id += 1
-                st.rerun()
+                # حفظ التذكرة مباشرة في قاعدة بيانات Supabase السحابية أولاً
+                if insert_ticket(new_ticket):
+                    st.session_state.tickets.append(new_ticket)
+                    st.success(f"🎉 تم تسجيل بلاغك بنجاح في قاعدة البيانات السحابية! رقم التذكرة هو: #{st.session_state.next_id}")
+                    st.session_state.next_id += 1
+                    st.rerun()
             else:
                 st.error("❌ الرجاء كتابة الاسم ووصف العطل أولاً قبل الإرسال!")
 
 # 🖥️ لوحة تحكم الـ IT
 with tab2:
     st.markdown("<h3 style='text-align: right; color: #8C6239;'>🖥️ شاشة مراقبة وحل الأعطال الحالية</h3>", unsafe_allow_html=True)
-    
     password = st.text_input("🔑 أدخل كلمة مرور الإدارة لتحديث التذاكر:", type="password")
     
     if password == "1234": 
         st.success("🔓 تم تفعيل صلاحيات المهندس المسؤول.")
         
-        # 📊 قسم استخراج التقارير (يظهر فقط عند وجود تذاكر)
-        if st.session_state.tickets:
-            st.markdown("### 📊 استخراج التقارير")
-            df_report = pd.DataFrame(st.session_state.tickets)
-            csv_data = df_report.to_csv(index=False, encoding="utf-8-sig")
-            
-            st.download_button(
-                label="📥 تحميل تقرير الأعطال الشامل (ملف CSV)",
-                data=csv_data,
-                file_name=f"Etqan_Law_IT_Report_{datetime.now().strftime('%Y-%m-%d')}.csv",
-                mime="text/csv"
-            )
-            st.markdown("---")
-            
-            # عرض التذاكر الحالية في جدول منظم
-            st.markdown("### 📋 قائمة التذاكر الحالية")
-            st.dataframe(df_report, use_container_width=True)
-            st.markdown("---")
+        # نضمن دائماً تحديث البيانات المعروضة من السحاب مباشرة
+        st.session_state.tickets = load_data()
         
         if st.session_state.tickets:
+            import pandas as pd
+            df_report = pd.DataFrame(st.session_state.tickets)
+            
+            st.markdown("### 📊 استخراج التقارير وقائمة البلاغات")
+            st.dataframe(df_report[["ID", "name", "dept", "issue", "status", "solved_by", "created_at", "updated_at"]], use_container_width=True)
+            
+            st.markdown("---")
             st.markdown("### 🛠️ تحديث حالة تذكرة وإسنادها للمهندس:")
             ticket_ids = [int(t['ID']) for t in st.session_state.tickets]
             selected_id = st.selectbox("اختر رقم التذكرة للتعديل:", ticket_ids)
@@ -170,16 +175,15 @@ with tab2:
             
             if st.button("💾 حفظ تحديث التذكرة"):
                 if it_engineer.strip():
-                    for t in st.session_state.tickets:
-                        if int(t['ID']) == selected_id:
-                            t['status'] = new_status
-                            t['solved_by'] = it_engineer
-                            t['updated_at'] = datetime.now().strftime("%Y-%m-%d %I:%M %p")
-                    
-                    # حفظ التعديلات فوراً في ملف الـ CSV بعد تحديث حالة التذكرة
-                    save_data(st.session_state.tickets)
-                    st.success(f"✅ تم تحديث التذكرة رقم #{selected_id} بنجاح وحفظها!")
-                    st.rerun()
+                    update_fields = {
+                        "status": new_status,
+                        "solved_by": it_engineer,
+                        "updated_at": datetime.now().strftime("%Y-%m-%d %I:%M %p")
+                    }
+                    # تحديث السحاب فوراً
+                    if update_ticket_in_db(selected_id, update_fields):
+                        st.success(f"✅ تم تحديث التذكرة رقم #{selected_id} بنجاح في قاعدة البيانات!")
+                        st.rerun()
                 else:
                     st.error("❌ يرجى كتابة اسم المهندس المسؤول عن الحل أولاً!")
         else:
