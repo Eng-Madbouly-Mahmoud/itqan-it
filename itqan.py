@@ -16,8 +16,7 @@ supabase = get_supabase_client()
 # 📥 دالة جلب البيانات من قاعدة البيانات السحابية Supabase
 def load_data():
     try:
-response = supabase.table("tickets").select("*").order("id", desc=False).execute()
-
+        response = supabase.table("tickets").select("*").order("id", desc=False).execute()
         tickets = []
         for row in response.data:
             ticket = row.copy()
