@@ -3,32 +3,37 @@ from datetime import datetime
 import pandas as pd
 import os
 
-# اسم الملف الخارجي لحفظ البيانات
+# اسم الملف الخارجي الثابت لحفظ البيانات على السيرفر
 DATA_FILE = "tickets.csv"
 
-# دالة لتحميل البيانات من ملف CSV
+# دالة ذكية لتحميل البيانات من ملف CSV
 def load_data():
     if os.path.exists(DATA_FILE):
         try:
             df = pd.read_csv(DATA_FILE)
+            # التأكد من تحويل الأعمدة الرقمية لمنع المشاكل في الـ ID
+            if not df.empty and 'ID' in df.columns:
+                df['ID'] = df['ID'].astype(int)
             return df.to_dict(orient="records")
         except:
             return []
     return []
 
-# دالة لحفظ البيانات إلى ملف CSV
+# دالة لحفظ البيانات إلى ملف CSV فوراً عند أي تعديل
 def save_data(tickets_list):
     if tickets_list:
         df = pd.DataFrame(tickets_list)
         df.to_csv(DATA_FILE, index=False, encoding="utf-8-sig")
     else:
-        if os.path.exists(DATA_FILE):
-            pd.DataFrame(columns=["ID", "name", "dept", "issue", "status", "solved_by", "created_at", "updated_at"]).to_csv(DATA_FILE, index=False, encoding="utf-8-sig")
+        # إذا كانت القائمة فارغة، يتم إنشاء ملف بهيكلية الأعمدة فقط
+        columns = ["ID", "name", "dept", "issue", "status", "solved_by", "created_at", "updated_at"]
+        pd.DataFrame(columns=columns).to_csv(DATA_FILE, index=False, encoding="utf-8-sig")
 
-# تهيئة مخزن البيانات وقراءة الملف الخارجي
+# تهيئة مخزن البيانات وقراءة الملف الخارجي لضمان بقائها بعد الريبوت
 if 'tickets' not in st.session_state:
     st.session_state.tickets = load_data()
 
+# ضبط الترقيم التلقائي للتذاكر
 if 'next_id' not in st.session_state:
     if st.session_state.tickets:
         max_id = max([int(t['ID']) for t in st.session_state.tickets])
@@ -108,7 +113,7 @@ with tab1:
                 current_time = datetime.now().strftime("%Y-%m-%d %I:%M %p")
                 
                 new_ticket = {
-                    "ID": st.session_state.next_id,
+                    "ID": int(st.session_state.next_id),
                     "name": name,
                     "dept": dept,
                     "issue": issue,
@@ -118,7 +123,9 @@ with tab1:
                     "updated_at": "لم تُحدث بعد"
                 }
                 st.session_state.tickets.append(new_ticket)
+                # حفظ فوري في ملف الـ CSV
                 save_data(st.session_state.tickets)
+                
                 st.success(f"🎉 تم تسجيل بلاغك بنجاح! رقم التذكرة الخاص بك هو: #{st.session_state.next_id}")
                 st.session_state.next_id += 1
                 st.rerun()
@@ -147,6 +154,11 @@ with tab2:
                 mime="text/csv"
             )
             st.markdown("---")
+            
+            # عرض التذاكر الحالية في جدول منظم
+            st.markdown("### 📋 قائمة التذاكر الحالية")
+            st.dataframe(df_report, use_container_width=True)
+            st.markdown("---")
         
         if st.session_state.tickets:
             st.markdown("### 🛠️ تحديث حالة تذكرة وإسنادها للمهندس:")
@@ -160,25 +172,17 @@ with tab2:
                 if it_engineer.strip():
                     for t in st.session_state.tickets:
                         if int(t['ID']) == selected_id:
-                            t['updated_at'] = datetime.now().strftime("%Y-%m-%d %I:%M %p")
                             t['status'] = new_status
-                            t['solved_by'] = it_engineer if "Solved" in new_status else f"جاري المتابعة بواسطة {it_engineer}"
-                            save_data(st.session_state.tickets)
-                            st.success(f"✅ تم تحديث التذكرة #{selected_id} بنجاح!")
-                            st.rerun()
+                            t['solved_by'] = it_engineer
+                            t['updated_at'] = datetime.now().strftime("%Y-%m-%d %I:%M %p")
+                    
+                    # حفظ التعديلات فوراً في ملف الـ CSV بعد تحديث حالة التذكرة
+                    save_data(st.session_state.tickets)
+                    st.success(f"✅ تم تحديث التذكرة رقم #{selected_id} بنجاح وحفظها!")
+                    st.rerun()
                 else:
-                    st.error("⚠️ الرجاء كتابة اسم المهندس أولاً!")
-            st.markdown("---")
-            
+                    st.error("❌ يرجى كتابة اسم المهندس المسؤول عن الحل أولاً!")
+        else:
+            st.info("💡 لا توجد أي تذاكر مسجلة في النظام حالياً.")
     elif password != "":
-        st.error("❌ كلمة المرور غير صحيحة! لا تملك صلاحية تعديل التذاكر.")
-
-    # عرض التذاكر المتاحة بشكل منظم
-    st.markdown("### 📋 قائمة البلاغات الحالية في النظام")
-    if not st.session_state.tickets:
-        st.info("💡 لا توجد تذاكر أو بلاغات مسجلة حالياً.")
-    else:
-        df_display = pd.DataFrame(st.session_state.tickets)
-        # إعادة ترتيب الأعمدة لتظهر للمهندس بشكل منظم ومفهوم
-        df_display.columns = ["رقم التذكرة", "اسم الموظف", "القسم", "وصف المشكلة", "الحالة", "المسؤول عن الحل", "تاريخ الإنشاء", "آخر تحديث"]
-        st.dataframe(df_display, use_container_width=True)
+        st.error("❌ كلمة المرور غير صحيحة!")
