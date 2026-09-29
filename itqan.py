@@ -4,7 +4,7 @@ from supabase import create_client, Client
 
 # 🔑 إعدادات الاتصال بقاعدة بيانات Supabase السحابية
 SUPABASE_URL = "https://stejbrmfjreoguuxohsr.supabase.co"
-SUPABASE_KEY = "sb_publishable_8TDCSTDd7rjdcj9r5VyEeQ_NYvR-F3o"
+SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN0ZWpicm1manJlb2d1dXhvaHNyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA2Nzc4ODUsImV4cCI6MjEwNjI1Mzg4NX0.mCmdj3d5ltZca-nGr7XEQPhBBsTFyGTXn2HOqr8l7M8"
 
 # تهيئة عميل Supabase لمرة واحدة في الجلسة
 @st.cache_resource
