@@ -54,6 +54,36 @@ def login_page():
                 else:
                     st.error("❌ اسم المستخدم أو كلمة المرور غير صحيحة!")
 
+# 🛠️ دوال آمنة تماماً ومحزومة لجلب البيانات لمنع الأخطاء السحابية من إسقاط الموقع
+def safe_fetch_finance():
+    try:
+        res = supabase.table("erp_finance").select("*").execute()
+        return res.data if (res and hasattr(res, 'data') and res.data) else []
+    except Exception:
+        return []
+
+def safe_fetch_inventory():
+    try:
+        res = supabase.table("erp_inventory").select("*").execute()
+        return res.data if (res and hasattr(res, 'data') and res.data) else []
+    except Exception:
+        return []
+
+def safe_fetch_sales():
+    try:
+        res = supabase.table("erp_sales").select("*").execute()
+        return res.data if (res and hasattr(res, 'data') and res.data) else []
+    except Exception:
+        return []
+
+def safe_fetch_hr():
+    try:
+        res = supabase.table("erp_hr").select("*").execute()
+        return res.data if (res and hasattr(res, 'data') and res.data) else []
+    except Exception:
+        return []
+
+
 # 2️⃣ لوحة التحكم الرئيسية والأقسام الفعالة
 def main_dashboard():
     with st.sidebar:
@@ -79,45 +109,27 @@ def main_dashboard():
         "👥 الموارد البشرية (HR)"
     ])
 
-    # متغيرات البيانات العامة لتأمين التبويبات من الانهيار
-    fin_data_list = []
-    inv_data_list = []
-    sales_data_list = []
-    hr_data_list = []
+    # جلب البيانات بشكل آمن ومحمي 100% من أخطاء السيرفرات
+    fin_data_list = safe_fetch_finance()
+    inv_data_list = safe_fetch_inventory()
+    sales_data_list = safe_fetch_sales()
+    hr_data_list = safe_fetch_hr()
 
-    # 📊 لوحة المؤشرات العامة (تم عزل الأخطاء تماماً هنا لحماية الموديولات)
+    # 📊 لوحة المؤشرات العامة
     with tab_home:
         st.subheader("📊 الأداء العام للمؤسسة")
         kpi1, kpi2, kpi3, kpi4 = st.columns(4)
         total_rev, total_exp, total_items, total_emps = 0.0, 0.0, 0, 0
         
-        # حماية جلب بيانات المالية وعزل خطأ السطر 88 القديم
-        try:
-            fin_res = supabase.table("erp_finance").select("*").execute()
-            if fin_res and hasattr(fin_res, 'data') and fin_res.data:
-                fin_data_list = fin_res.data
-                total_rev = sum([float(f.get('amount', 0)) for f in fin_data_list if f.get('type') == 'إيرادات'])
-                total_exp = sum([float(f.get('amount', 0)) for f in fin_data_list if f.get('type') == 'مصروفات'])
-        except Exception as e:
-            st.warning("⚠️ تنبيه سحابي: فشل جلب بيانات المالية (قد يكون بسبب صلاحيات RLS في Supabase).")
+        if fin_data_list:
+            total_rev = sum([float(f.get('amount', 0)) for f in fin_data_list if f.get('type') == 'إيرادات'])
+            total_exp = sum([float(f.get('amount', 0)) for f in fin_data_list if f.get('type') == 'مصروفات'])
             
-        # حماية جلب بيانات المستودع    
-        try:
-            inv_res = supabase.table("erp_inventory").select("*").execute()
-            if inv_res and hasattr(inv_res, 'data') and inv_res.data:
-                inv_data_list = inv_res.data
-                total_items = sum([int(i.get('quantity', 0)) for i in inv_data_list])
-        except Exception as e:
-            st.warning("⚠️ تنبيه سحابي: فشل جلب بيانات المستودع.")
+        if inv_data_list:
+            total_items = sum([int(i.get('quantity', 0)) for i in inv_data_list])
             
-        # حماية جلب بيانات الموظفين    
-        try:
-            hr_res = supabase.table("erp_hr").select("*").execute()
-            if hr_res and hasattr(hr_res, 'data') and hr_res.data:
-                hr_data_list = hr_res.data
-                total_emps = len(hr_data_list)
-        except Exception as e:
-            pass
+        if hr_data_list:
+            total_emps = len(hr_data_list)
             
         kpi1.metric("إجمالي الإيرادات", f"${total_rev:,.2f}")
         kpi2.metric("إجمالي المصروفات", f"${total_exp:,.2f}")
@@ -141,14 +153,14 @@ def main_dashboard():
                         st.success("✅ تم حفظ السند المالي بنجاح!")
                         st.rerun()
                     except Exception as e:
-                        st.error(f"خطأ في الحفظ بقاعدة البيانات: {e}")
+                        st.error(f"خطأ في حفظ البيانات (تحقق من صلاحيات الجدول): {e}")
         with col_view:
             st.markdown("### 📋 كشف الحركة المالية الحالي")
             if fin_data_list:
                 df = pd.DataFrame(fin_data_list)
                 st.dataframe(df, use_container_width=True)
             else:
-                st.info("لا توجد بيانات مالية متاحة أو مسجلة حالياً.")
+                st.info("لا توجد بيانات متاحة حالياً أو الجدول فارغ بسبب الصلاحيات السحابية.")
 
     # 📦 إدارة المستودعات والمخازن
     with tab_inventory:
@@ -158,7 +170,7 @@ def main_dashboard():
             st.markdown("### 📥 تسجيل صنف جديد")
             with st.form("inventory_form", clear_on_submit=True):
                 p_name = st.text_input("اسم المنتج / الصنف:")
-                p_qty = st.number_input("الكمية المتاحة:", min_value=1, step=1)
+                p_qty = st.number_input("الكمية Mتاحة:", min_value=1, step=1)
                 p_price = st.number_input("سعر الوحدة ($):", min_value=0.5)
                 inv_submit = st.form_submit_button("إضافة للمخزن السحابي")
                 if inv_submit and p_name:
@@ -196,15 +208,11 @@ def main_dashboard():
                         st.error(f"خطأ في إصدار الفاتورة: {e}")
         with col_s_view:
             st.markdown("### 📋 سجل الفواتير الصادرة")
-            try:
-                res_sales = supabase.table("erp_sales").select("*").execute()
-                if res_sales and hasattr(res_sales, 'data') and res_sales.data:
-                    df_sales = pd.DataFrame(res_sales.data)
-                    st.dataframe(df_sales, use_container_width=True)
-                else:
-                    st.info("لا توجد فواتير صادرة بعد.")
-            except Exception as e:
-                st.info("لا توجد فواتير متاحة للعرض.")
+            if sales_data_list:
+                df_sales = pd.DataFrame(sales_data_list)
+                st.dataframe(df_sales, use_container_width=True)
+            else:
+                st.info("لا توجد فواتير صادرة بعد.")
 
     # 👥 قسم الموارد البشرية (HR)
     with tab_hr:
@@ -214,3 +222,5 @@ def main_dashboard():
             st.markdown("### 📥 تسجيل موظف جديد")
             with st.form("hr_form", clear_on_submit=True):
                 emp_name = st.text_input("اسم الموظف بالكامل:")
+                emp_role = st.text_input("المسمى الوظيفي:")
+                emp_salary = st.number_input("الراتب الأساسي ($):", min_value=100.0)
