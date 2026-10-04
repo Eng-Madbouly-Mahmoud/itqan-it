@@ -1,192 +1,213 @@
 import streamlit as st
+import pandas as pd
 from datetime import datetime
 from supabase import create_client, Client
 
-# 🔑 إعدادات الاتصال بقاعدة بيانات Supabase السحابية
-SUPABASE_URL = "https://stejbrmfjreoguuxohsr.supabase.co"
-SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN0ZWpicm1manJlb2d1dXhvaHNyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA2Nzc4ODUsImV4cCI6MjEwNjI1Mzg4NX0.mCmdj3d5ltZca-nGr7XEQPhBBsTFyGTXn2HOqr8l7M8"
+# ⚙️ إعدادات الصفحة الأساسية لنظام الـ ERP باسم المهندس مدبولي
+st.set_page_config(page_title="نظام ERP - المهندس مدبولي", page_icon="💼", layout="wide")
 
-# تهيئة عميل Supabase لمرة واحدة في الجلسة
+# 🔒 كود الحماية المخصص لإخفاء القوائم الافتراضية لـ Streamlit عن المستخدمين
+hide_streamlit_style = """
+            <style>
+            #MainMenu {visibility: hidden;}
+            footer {visibility: hidden;}
+            header {visibility: hidden;}
+            </style>
+            """
+st.markdown(hide_streamlit_style, unsafe_allow_html=True)
+
+# 🔑 مفاتيح الاتصال المباشرة بقاعدة بيانات Supabase
+SUPABASE_URL = "https://supabase.co"
+SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlwaWxmZmplZXl4Ynd3ZmNzcWt6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA2ODI4ODcsImV4cCI6MjEwNjI1ODg4N30.Wf4wu9cqE_2jwq9_W1dIiTlibXWzFnhHaZEhgvDWXzU"
+
 @st.cache_resource
 def get_supabase_client() -> Client:
     return create_client(SUPABASE_URL, SUPABASE_KEY)
 
 supabase = get_supabase_client()
 
-# 📥 دالة جلب البيانات من قاعدة البيانات السحابية Supabase
-def load_data():
-    try:
-        response = supabase.table("tickets").select("*").order("id", desc=False).execute()
-        tickets = []
-        for row in response.data:
-            ticket = row.copy()
-            ticket['ID'] = row['id']  # تحويل id الصغير إلى ID الكبير ليتوافق مع كودك
-            tickets.append(ticket)
-        return tickets
-    except Exception as e:
-        st.error(f"خطأ في جلب البيانات من السيرفر: {e}")
-        return []
+# 🔒 نظام التحقق من الصلاحيات وتثبيت الجلسة
+if "logged_in" not in st.session_state:
+    st.session_state["logged_in"] = False
+    st.session_state["user_role"] = None
 
-# 💾 دالة حفظ تذكرة جديدة مباشرة في السحاب
-def insert_ticket(new_ticket):
-    try:
-        db_data = {
-            "id": int(new_ticket["ID"]),
-            "name": new_ticket["name"],
-            "dept": new_ticket["dept"],
-            "issue": new_ticket["issue"],
-            "status": new_ticket["status"],
-            "solved_by": new_ticket["solved_by"],
-            "created_at": new_ticket["created_at"],
-            "updated_at": new_ticket["updated_at"]
-        }
-        supabase.table("tickets").insert(db_data).execute()
-        return True
-    except Exception as e:
-        st.error(f"خطأ في حفظ التذكرة: {e}")
-        return False
-
-# 🔄 دالة تحديث حالة تذكرة قائمة في السحاب
-def update_ticket_in_db(ticket_id, updated_fields):
-    try:
-        supabase.table("tickets").update(updated_fields).eq("id", ticket_id).execute()
-        return True
-    except Exception as e:
-        st.error(f"خطأ في تحديث التذكرة: {e}")
-        return False
-
-# تهيئة مخزن البيانات وجلب التذاكر من السحاب عند تشغيل الموقع
-if 'tickets' not in st.session_state:
-    st.session_state.tickets = load_data()
-
-# ضبط الترقيم التلقائي للتذاكر بناءً على آخر تذكرة في السحاب
-if 'next_id' not in st.session_state:
-    if st.session_state.tickets:
-        max_id = max([int(t['ID']) for t in st.session_state.tickets])
-        st.session_state.next_id = max_id + 1
-    else:
-        st.session_state.next_id = 101
-
-# إعدادات الصفحة والأيقونة الرئيسية للموقع
-st.set_page_config(
-    page_title="الدكتور صلاح حسب الله - مركز الدعم الفني - شركة إتقان",
-    page_icon="⚖️",
-    layout="wide"
-)
-
-# =========================================================
-# 💻 محتوى نظام شركة إتقان للمحاماة (التصميم البني الجديد)
-# =========================================================
-
-st.markdown("""
-    <div style='background-color: #8C6239; padding: 25px; border-radius: 12px; margin-bottom: 5px; display: flex; align-items: center; justify-content: center; gap: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);'>
-        <svg width="60" height="60" viewBox="0 0 24 24" fill="none" xmlns="http://w3.org" style='filter: drop-shadow(0px 2px 4px rgba(0,0,0,0.3));'>
-            <path d="M12 2V22M12 5H5M12 5H19M5 5L3 13M19 5L21 13M3 13C3 15 5 15 5 15C5 15 7 15 7 13M21 13C21 15 19 15 19 15C19 15 17 15 17 13M5 15V18C5 19.1 5.9 20 7 20H17C18.1 20 19 19.1 19 18V15" stroke="#F5EBE0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-            <path d="M9 22H15" stroke="#F5EBE0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-        </svg>
-        <div>
-            <h1 style='text-align: center; color: #F5EBE0; margin: 0; font-family: "Cairo", sans-serif; font-size: 32px; font-weight: bold;'>لوحة تكنولوجيا المعلومات والشبكات ⚙️</h1>
-            <p style='text-align: center; color: #E3D5CA; margin: 5px 0 0 0; font-size: 14px;'>المكتب الذكي لإدارة ومتابعة البلاغات التقنية</p>
-        </div>
-    </div>
-    <div style='background-color: #D5BDAF; padding: 10px; border-radius: 8px; margin-bottom: 25px; text-align: center; box-shadow: 0 2px 4px rgba(0,0,0,0.05);'>
-        <marquee direction='right' style='color: #4A3728; font-weight: bold; font-size: 16px; margin: 0;'>
-            ⚖️ شركة إتقان للمحاماة والاستشارات القانونية (د. صلاح حسب الله) ترحب بكم .. يرجى تسجيل بلاغات الأعطال بدقة لسرعة توجيه مهندس الـ IT إليكم فوراً 🛠️
-        </marquee>
-    </div>
-""", unsafe_allow_html=True)
-
-st.markdown("""
-    <style>
-    .stTabs [data-baseweb="tab-list"] { gap: 10px; }
-    .stTabs [data-baseweb="tab"] {
-        background-color: #E3D5CA; border-radius: 4px 4px 0px 0px; padding: 10px 20px; color: #4A3728; font-weight: bold;
-    }
-    .stTabs [aria-selected="true"] { 
-        background-color: #8C6239 !important; color: #F5EBE0 !important;
-    }
-    </style>
-""", unsafe_allow_html=True)
-
-tab1, tab2 = st.tabs(["📝 بوابة الموظفين والمستشارين (تسجيل عطل)", "🖥️ لوحة تحكم الـ IT (إدارة التذاكر)"])
-
-# 📝 بوابة الموظفين
-with tab1:
-    st.markdown("<h3 style='text-align: right; color: #8C6239;'>📥 تسجيل بلاغ عطل تقني جديد في النظام</h3>", unsafe_allow_html=True)
-    st.write("برجاء ملء الخانات التالية بدقة ليتم توجيه الدعم الفني إليك فوراً لتجنب تعطيل العمل القانوني:")
+# 1️⃣ صفحة تسجيل الدخول
+def login_page():
+    st.markdown("<h2 style='text-align: center; color: #1E3A8A;'>🔐 تسجيل الدخول لنظام ERP - المهندس مدبولي</h2>", unsafe_allow_html=True)
     
-    with st.form("ticket_form", clear_on_submit=True):
-        name = st.text_input("👤 اسم الموظف / المستشار بالكامل:")
-        dept = st.selectbox("🏢 القسم / الإدارة التابع لها:", [
-            "قسم الاداره العليا", "بنك مصر", "بنك الاهلي", "التجاري الدولي", "الادمن", "إدارة عامة", "أخرى"
-        ])
-        issue = st.text_area("⚠️ وصف العطل أو المشكلة التقنية بالتفصيل:")
-        submit = st.form_submit_button("🚀 إرسال التذكرة إلى قسم الدعم الفني")
-        
-        if submit:
-            if name.strip() and issue.strip():
-                current_time = datetime.now().strftime("%Y-%m-%d %I:%M %p")
-                
-                new_ticket = {
-                    "ID": int(st.session_state.next_id),
-                    "name": name,
-                    "dept": dept,
-                    "issue": issue,
-                    "status": "Pending (قيد الانتظار)",
-                    "solved_by": "لم تُحل بعد ⏳",
-                    "created_at": current_time,
-                    "updated_at": "لم تُحدث بعد"
-                }
-                
-                # حفظ التذكرة مباشرة في قاعدة بيانات Supabase السحابية أولاً
-                if insert_ticket(new_ticket):
-                    st.session_state.tickets.append(new_ticket)
-                    st.success(f"🎉 تم تسجيل بلاغك بنجاح في قاعدة البيانات السحابية! رقم التذكرة هو: #{st.session_state.next_id}")
-                    st.session_state.next_id += 1
+    col1, col2, col3 = st.columns(3)
+    with col2:
+        with st.form("login_form"):
+            username = st.text_input("👤 اسم المستخدم (Username):")
+            password = st.text_input("🔑 كلمة المرور (Password):", type="password")
+            submit = st.form_submit_button("تسجيل الدخول للنظام")
+            
+            if submit:
+                if username == "admin" and password == "admin2026":
+                    st.session_state["logged_in"] = True
+                    st.session_state["user_role"] = "المدير العام"
                     st.rerun()
-            else:
-                st.error("❌ الرجاء كتابة الاسم ووصف العطل أولاً قبل الإرسال!")
-
-# 🖥️ لوحة تحكم الـ IT
-with tab2:
-    st.markdown("<h3 style='text-align: right; color: #8C6239;'>🖥️ شاشة مراقبة وحل الأعطال الحالية</h3>", unsafe_allow_html=True)
-    password = st.text_input("🔑 أدخل كلمة مرور الإدارة لتحديث التذاكر:", type="password")
-    
-    if password == "1234": 
-        st.success("🔓 تم تفعيل صلاحيات المهندس المسؤول.")
-        
-        # نضمن دائماً تحديث البيانات المعروضة من السحاب مباشرة
-        st.session_state.tickets = load_data()
-        
-        if st.session_state.tickets:
-            import pandas as pd
-            df_report = pd.DataFrame(st.session_state.tickets)
-            
-            st.markdown("### 📊 استخراج التقارير وقائمة البلاغات")
-            st.dataframe(df_report[["ID", "name", "dept", "issue", "status", "solved_by", "created_at", "updated_at"]], use_container_width=True)
-            
-            st.markdown("---")
-            st.markdown("### 🛠️ تحديث حالة تذكرة وإسنادها للمهندس:")
-            ticket_ids = [int(t['ID']) for t in st.session_state.tickets]
-            selected_id = st.selectbox("اختر رقم التذكرة للتعديل:", ticket_ids)
-            
-            it_engineer = st.text_input("👨‍💻 اسم المهندس القائم بالحل:")
-            new_status = st.selectbox("الحالة الجديدة للتذكرة:", ["Pending (قيد الانتظار)", "In Progress (جاري العمل)", "Solved (تم حل المشكلة بنجاح ✅)"])
-            
-            if st.button("💾 حفظ تحديث التذكرة"):
-                if it_engineer.strip():
-                    update_fields = {
-                        "status": new_status,
-                        "solved_by": it_engineer,
-                        "updated_at": datetime.now().strftime("%Y-%m-%d %I:%M %p")
-                    }
-                    # تحديث السحاب فوراً
-                    if update_ticket_in_db(selected_id, update_fields):
-                        st.success(f"✅ تم تحديث التذكرة رقم #{selected_id} بنجاح في قاعدة البيانات!")
-                        st.rerun()
+                elif username == "accountant" and password == "finance2026":
+                    st.session_state["logged_in"] = True
+                    st.session_state["user_role"] = "المحاسب"
+                    st.rerun()
                 else:
-                    st.error("❌ يرجى كتابة اسم المهندس المسؤول عن الحل أولاً!")
-        else:
-            st.info("💡 لا توجد أي تذاكر مسجلة في النظام حالياً.")
-    elif password != "":
-        st.error("❌ كلمة المرور غير صحيحة!")
+                    st.error("❌ اسم المستخدم أو كلمة المرور غير صحيحة!")
+
+# 2️⃣ لوحة التحكم الرئيسية والأقسام الفعالة
+def main_dashboard():
+    with st.sidebar:
+        st.markdown(f"### 👨‍💻 المستخدم: {st.session_state['user_role']}")
+        st.markdown(f"📅 التاريخ: {datetime.now().strftime('%Y-%m-%d')}")
+        st.markdown("---")
+        if st.button("🚪 تسجيل الخروج من النظام"):
+            st.session_state["logged_in"] = False
+            st.session_state["user_role"] = None
+            st.rerun()
+
+    st.markdown("""
+        <div style='background-color: #1E3A8A; padding: 15px; border-radius: 8px; margin-bottom: 25px;'>
+            <h1 style='text-align: center; color: white; margin: 0;'>💼 Enterprise Resource Planning (ERP - Eng Madbouly)</h1>
+        </div>
+    """, unsafe_allow_html=True)
+
+    tab_home, tab_finance, tab_inventory, tab_sales, tab_hr = st.tabs([
+        "📈 لوحة المؤشرات العامة", 
+        "💰 إدارة الحسابات والمالية", 
+        "📦 إدارة المستودعات والمخازن", 
+        "🧾 الفواتير والمبيعات",
+        "👥 الموارد البشرية (HR)"
+    ])
+
+    # 📊 لوحة المؤشرات العامة (تمت إضافة حماية كاملة ومقاومة لانهيار البيانات السحابية)
+    with tab_home:
+        st.subheader("📊 الأداء العام للمؤسسة")
+        kpi1, kpi2, kpi3, kpi4 = st.columns(4)
+        total_rev, total_exp, total_items, total_emps = 0.0, 0.0, 0, 0
+        
+        # حماية جلب بيانات المالية
+        try:
+            fin_res = supabase.table("erp_finance").select("*").execute()
+            if fin_res and hasattr(fin_res, 'data') and fin_res.data:
+                total_rev = sum([float(f.get('amount', 0)) for f in fin_res.data if f.get('type') == 'إيرادات'])
+                total_exp = sum([float(f.get('amount', 0)) for f in fin_res.data if f.get('type') == 'مصروفات'])
+        except Exception:
+            pass
+            
+        # حماية جلب بيانات المستودع    
+        try:
+            inv_res = supabase.table("erp_inventory").select("*").execute()
+            if inv_res and hasattr(inv_res, 'data') and inv_res.data:
+                total_items = sum([int(i.get('quantity', 0)) for i in inv_res.data])
+        except Exception:
+            pass
+            
+        # حماية جلب بيانات الموظفين    
+        try:
+            hr_res = supabase.table("erp_hr").select("*").execute()
+            if hr_res and hasattr(hr_res, 'data') and hr_res.data:
+                total_emps = len(hr_res.data)
+        except Exception:
+            pass
+            
+        kpi1.metric("إجمالي الإيرادات", f"${total_rev:,.2f}")
+        kpi2.metric("إجمالي المصروفات", f"${total_exp:,.2f}")
+        kpi3.metric("قطع المخزون الحالية", f"{total_items} قطعة")
+        kpi4.metric("عدد الموظفين بالنظام", f"{total_emps} موظف")
+
+    # 💰 إدارة الحسابات والمالية
+    with tab_finance:
+        st.subheader("💳 حركة القيود اليومية (الخزنة)")
+        col_form, col_view = st.columns(2)
+        with col_form:
+            st.markdown("### 📥 إضافة قيد مالي")
+            with st.form("finance_form", clear_on_submit=True):
+                title = st.text_input("البيان / الوصف:")
+                amount = st.number_input("المبلغ ($):", min_value=1.0)
+                trans_type = st.selectbox("نوع المعاملة:", ["إيرادات", "مصروفات"])
+                fin_submit = st.form_submit_button("حفظ المعاملة بالسحاب")
+                if fin_submit and title:
+                    try:
+                        supabase.table("erp_finance").insert({"title": title, "amount": amount, "type": trans_type}).execute()
+                        st.success("✅ تم حفظ السند المالي بنجاح!")
+                        st.rerun()
+                    except Exception as e:
+                        st.error(f"خطأ في الحفظ بقاعدة البيانات: {e}")
+        with col_view:
+            st.markdown("### 📋 كشف الحركة المالية الحالي")
+            try:
+                res = supabase.table("erp_finance").select("*").order("id", desc=True).execute()
+                if res and hasattr(res, 'data') and res.data:
+                    df = pd.DataFrame(res.data)
+                    st.dataframe(df, use_container_width=True)
+                else:
+                    st.info("لا توجد قيود مالية مسجلة حتى الآن.")
+            except Exception as e:
+                st.error(f"عذراً، فشل عرض الجدول: {e}")
+
+    # 📦 إدارة المستودعات والمخازن
+    with tab_inventory:
+        st.subheader("📦 إضافة وإدارة المنتجات والمخزون")
+        col_inv_form, col_inv_view = st.columns(2)
+        with col_inv_form:
+            st.markdown("### 📥 تسجيل صنف جديد")
+            with st.form("inventory_form", clear_on_submit=True):
+                p_name = st.text_input("اسم المنتج / الصنف:")
+                p_qty = st.number_input("الكمية المتاحة:", min_value=1, step=1)
+                p_price = st.number_input("سعر الوحدة ($):", min_value=0.5)
+                inv_submit = st.form_submit_button("إضافة للمخزن السحابي")
+                if inv_submit and p_name:
+                    try:
+                        supabase.table("erp_inventory").insert({"product_name": p_name, "quantity": p_qty, "price": p_price}).execute()
+                        st.success("✅ تم إضافة الصنف للمستودع!")
+                        st.rerun()
+                    except Exception as e:
+                        st.error(f"خطأ في إضافة الصنف: {e}")
+        with col_inv_view:
+            st.markdown("### 📋 جرد أصناف المخزن الحالية")
+            try:
+                res_inv = supabase.table("erp_inventory").select("*").order("id", desc=True).execute()
+                if res_inv and hasattr(res_inv, 'data') and res_inv.data:
+                    df_inv = pd.DataFrame(res_inv.data)
+                    st.dataframe(df_inv, use_container_width=True)
+                else:
+                    st.info("المخزن فارغ حالياً.")
+            except Exception as e:
+                st.error(f"عذراً، فشل عرض بيانات المخزن: {e}")
+
+    # 🧾 قسم المبيعات والفواتير
+    with tab_sales:
+        st.subheader("🧾 نظام الفواتير والمبيعات السريعة")
+        col_s_form, col_s_view = st.columns(2)
+        with col_s_form:
+            st.markdown("### 📥 إنشاء فاتورة بيع")
+            with st.form("sales_form", clear_on_submit=True):
+                c_name = st.text_input("اسم العميل:")
+                s_amount = st.number_input("القيمة الإجمالية للفاتورة ($):", min_value=1.0)
+                inv_date = st.date_input("تاريخ الفاتورة").strftime("%Y-%m-%d")
+                sales_submit = st.form_submit_button("إصدار الفاتورة وتثبيتها")
+                if sales_submit and c_name:
+                    try:
+                        supabase.table("erp_sales").insert({"client_name": c_name, "total_amount": s_amount, "invoice_date": inv_date}).execute()
+                        st.success("✅ تم إصدار وحفظ الفاتورة تلقائياً!")
+                        st.rerun()
+                    except Exception as e:
+                        st.error(f"خطأ في إصدار الفاتورة: {e}")
+        with col_s_view:
+            st.markdown("### 📋 سجل الفواتير الصادرة")
+            try:
+                res_sales = supabase.table("erp_sales").select("*").order("id", desc=True).execute()
+                if res_sales and hasattr(res_sales, 'data') and res_sales.data:
+                    df_sales = pd.DataFrame(res_sales.data)
+                    st.dataframe(df_sales, use_container_width=True)
+                else:
+                    st.info("لا توجد فواتير صادرة بعد.")
+            except Exception as e:
+                st.error(f"عذراً، فشل عرض سجل المبيعات: {e}")
+
+    # 👥 قسم الموارد البشرية (HR)
+    with tab_hr:
+        st.subheader("👥 إدارة شؤون الموظفين")
+        col_hr_form, col_hr_view = st.columns(2)
+        with col_hr_form:
+            st.markdown("### 📥 تسجيل موظف جديد")
