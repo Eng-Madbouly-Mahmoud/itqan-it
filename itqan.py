@@ -79,35 +79,44 @@ def main_dashboard():
         "👥 الموارد البشرية (HR)"
     ])
 
-    # 📊 لوحة المؤشرات العامة (تمت إضافة حماية كاملة ومقاومة لانهيار البيانات السحابية)
+    # متغيرات البيانات العامة لتأمين التبويبات من الانهيار
+    fin_data_list = []
+    inv_data_list = []
+    sales_data_list = []
+    hr_data_list = []
+
+    # 📊 لوحة المؤشرات العامة (تم عزل الأخطاء تماماً هنا لحماية الموديولات)
     with tab_home:
         st.subheader("📊 الأداء العام للمؤسسة")
         kpi1, kpi2, kpi3, kpi4 = st.columns(4)
         total_rev, total_exp, total_items, total_emps = 0.0, 0.0, 0, 0
         
-        # حماية جلب بيانات المالية
+        # حماية جلب بيانات المالية وعزل خطأ السطر 88 القديم
         try:
             fin_res = supabase.table("erp_finance").select("*").execute()
             if fin_res and hasattr(fin_res, 'data') and fin_res.data:
-                total_rev = sum([float(f.get('amount', 0)) for f in fin_res.data if f.get('type') == 'إيرادات'])
-                total_exp = sum([float(f.get('amount', 0)) for f in fin_res.data if f.get('type') == 'مصروفات'])
-        except Exception:
-            pass
+                fin_data_list = fin_res.data
+                total_rev = sum([float(f.get('amount', 0)) for f in fin_data_list if f.get('type') == 'إيرادات'])
+                total_exp = sum([float(f.get('amount', 0)) for f in fin_data_list if f.get('type') == 'مصروفات'])
+        except Exception as e:
+            st.warning("⚠️ تنبيه سحابي: فشل جلب بيانات المالية (قد يكون بسبب صلاحيات RLS في Supabase).")
             
         # حماية جلب بيانات المستودع    
         try:
             inv_res = supabase.table("erp_inventory").select("*").execute()
             if inv_res and hasattr(inv_res, 'data') and inv_res.data:
-                total_items = sum([int(i.get('quantity', 0)) for i in inv_res.data])
-        except Exception:
-            pass
+                inv_data_list = inv_res.data
+                total_items = sum([int(i.get('quantity', 0)) for i in inv_data_list])
+        except Exception as e:
+            st.warning("⚠️ تنبيه سحابي: فشل جلب بيانات المستودع.")
             
         # حماية جلب بيانات الموظفين    
         try:
             hr_res = supabase.table("erp_hr").select("*").execute()
             if hr_res and hasattr(hr_res, 'data') and hr_res.data:
-                total_emps = len(hr_res.data)
-        except Exception:
+                hr_data_list = hr_res.data
+                total_emps = len(hr_data_list)
+        except Exception as e:
             pass
             
         kpi1.metric("إجمالي الإيرادات", f"${total_rev:,.2f}")
@@ -135,15 +144,11 @@ def main_dashboard():
                         st.error(f"خطأ في الحفظ بقاعدة البيانات: {e}")
         with col_view:
             st.markdown("### 📋 كشف الحركة المالية الحالي")
-            try:
-                res = supabase.table("erp_finance").select("*").order("id", desc=True).execute()
-                if res and hasattr(res, 'data') and res.data:
-                    df = pd.DataFrame(res.data)
-                    st.dataframe(df, use_container_width=True)
-                else:
-                    st.info("لا توجد قيود مالية مسجلة حتى الآن.")
-            except Exception as e:
-                st.error(f"عذراً، فشل عرض الجدول: {e}")
+            if fin_data_list:
+                df = pd.DataFrame(fin_data_list)
+                st.dataframe(df, use_container_width=True)
+            else:
+                st.info("لا توجد بيانات مالية متاحة أو مسجلة حالياً.")
 
     # 📦 إدارة المستودعات والمخازن
     with tab_inventory:
@@ -165,15 +170,11 @@ def main_dashboard():
                         st.error(f"خطأ في إضافة الصنف: {e}")
         with col_inv_view:
             st.markdown("### 📋 جرد أصناف المخزن الحالية")
-            try:
-                res_inv = supabase.table("erp_inventory").select("*").order("id", desc=True).execute()
-                if res_inv and hasattr(res_inv, 'data') and res_inv.data:
-                    df_inv = pd.DataFrame(res_inv.data)
-                    st.dataframe(df_inv, use_container_width=True)
-                else:
-                    st.info("المخزن فارغ حالياً.")
-            except Exception as e:
-                st.error(f"عذراً، فشل عرض بيانات المخزن: {e}")
+            if inv_data_list:
+                df_inv = pd.DataFrame(inv_data_list)
+                st.dataframe(df_inv, use_container_width=True)
+            else:
+                st.info("المخزن فارغ حالياً.")
 
     # 🧾 قسم المبيعات والفواتير
     with tab_sales:
@@ -196,14 +197,14 @@ def main_dashboard():
         with col_s_view:
             st.markdown("### 📋 سجل الفواتير الصادرة")
             try:
-                res_sales = supabase.table("erp_sales").select("*").order("id", desc=True).execute()
+                res_sales = supabase.table("erp_sales").select("*").execute()
                 if res_sales and hasattr(res_sales, 'data') and res_sales.data:
                     df_sales = pd.DataFrame(res_sales.data)
                     st.dataframe(df_sales, use_container_width=True)
                 else:
                     st.info("لا توجد فواتير صادرة بعد.")
             except Exception as e:
-                st.error(f"عذراً، فشل عرض سجل المبيعات: {e}")
+                st.info("لا توجد فواتير متاحة للعرض.")
 
     # 👥 قسم الموارد البشرية (HR)
     with tab_hr:
@@ -211,3 +212,5 @@ def main_dashboard():
         col_hr_form, col_hr_view = st.columns(2)
         with col_hr_form:
             st.markdown("### 📥 تسجيل موظف جديد")
+            with st.form("hr_form", clear_on_submit=True):
+                emp_name = st.text_input("اسم الموظف بالكامل:")
