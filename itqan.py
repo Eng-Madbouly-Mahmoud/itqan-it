@@ -11,18 +11,15 @@ SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJ
 def get_supabase_client() -> Client:
     return create_client(SUPABASE_URL, SUPABASE_KEY)
 
-try:
-    # يجب أن تبدأ بمسافة بادئة (4 مسافات) مقارنة بكلمة try
-    response = supabase.table("tickets").select("*").order("id", desc=False).execute()
-except Exception as e:
-    # تأكد أيضاً من إزاحة الكود داخل الـ except هنا
-    print(e) 
+# 🔄 استدعاء العميل وتخزينه في متغير للاستخدام في بقية الملف
+supabase = get_supabase_client()
 
 
 # 📥 دالة جلب البيانات من قاعدة البيانات السحابية Supabase
 def load_data():
     try:
-response = supabase.table("tickets").select("*").order("id", desc=False).execute()
+        # تم تصحيح المسافة البادئة هنا (4 مسافات إضافية للداخل)
+        response = supabase.table("tickets").select("*").order("id", desc=False).execute()
 
         tickets = []
         for row in response.data:
@@ -176,24 +173,3 @@ with tab2:
             st.markdown("### 🛠️ تحديث حالة تذكرة وإسنادها للمهندس:")
             ticket_ids = [int(t['ID']) for t in st.session_state.tickets]
             selected_id = st.selectbox("اختر رقم التذكرة للتعديل:", ticket_ids)
-            
-            it_engineer = st.text_input("👨‍💻 اسم المهندس القائم بالحل:")
-            new_status = st.selectbox("الحالة الجديدة للتذكرة:", ["Pending (قيد الانتظار)", "In Progress (جاري العمل)", "Solved (تم حل المشكلة بنجاح ✅)"])
-            
-            if st.button("💾 حفظ تحديث التذكرة"):
-                if it_engineer.strip():
-                    update_fields = {
-                        "status": new_status,
-                        "solved_by": it_engineer,
-                        "updated_at": datetime.now().strftime("%Y-%m-%d %I:%M %p")
-                    }
-                    # تحديث السحاب فوراً
-                    if update_ticket_in_db(selected_id, update_fields):
-                        st.success(f"✅ تم تحديث التذكرة رقم #{selected_id} بنجاح في قاعدة البيانات!")
-                        st.rerun()
-                else:
-                    st.error("❌ يرجى كتابة اسم المهندس المسؤول عن الحل أولاً!")
-        else:
-            st.info("💡 لا توجد أي تذاكر مسجلة في النظام حالياً.")
-    elif password != "":
-        st.error("❌ كلمة المرور غير صحيحة!")
