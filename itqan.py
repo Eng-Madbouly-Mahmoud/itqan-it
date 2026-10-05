@@ -11,7 +11,13 @@ SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJ
 def get_supabase_client() -> Client:
     return create_client(SUPABASE_URL, SUPABASE_KEY)
 
-supabase = get_supabase_client()
+try:
+    # يجب أن تبدأ بمسافة بادئة (4 مسافات) مقارنة بكلمة try
+    response = supabase.table("tickets").select("*").order("id", desc=False).execute()
+except Exception as e:
+    # تأكد أيضاً من إزاحة الكود داخل الـ except هنا
+    print(e) 
+
 
 # 📥 دالة جلب البيانات من قاعدة البيانات السحابية Supabase
 def load_data():
