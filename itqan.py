@@ -3,8 +3,8 @@ from datetime import datetime
 import pandas as pd
 from supabase import create_client, Client
 
-# 🔑 إعدادات الاتصال بقاعدة بيانات Supabase السحابية
-SUPABASE_URL = "https://supabase.co"
+# 🔑 إعدادات الاتصال بقاعدة بيانات Supabase السحابية الفعالة لديك
+SUPABASE_URL = "https://stejbrmfjreoguuxohsr.supabase.co"
 SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN0ZWpicm1manJlb2d1dXhvaHNyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA2Nzc4ODUsImV4cCI6MjEwNjI1Mzg4NX0.mCmdj3d5ltZca-nGr7XEQPhBBsTFyGTXn2HOqr8l7M8"
 
 # تهيئة عميل Supabase لمرة واحدة في الجلسة
@@ -191,30 +191,32 @@ with tab3:
         with col_acc1:
             acc_number = st.text_input("رقم الحساب (acc_id) - مثال: 10001:")
         with col_acc2:
-            # تم تسمية المتغير بوضوح لضمان قراءته بشكل صحيح
             account_name_input = st.text_input("اسم الحساب (Account Name):")
         with col_acc3:
             open_bal = st.number_input("الرصيد الافتتاحي (amount_num) $:", min_value=0.0, value=0.0, step=10.0)
             
         col_class1, col_class2 = st.columns(2)
         with col_class1:
-            class_1 = st.text_input("التصنيف الأول (class1) - مثال: أصول / إيرادات:")
+            class_1 = st.selectbox("التصنيف الأول (class1):", ["أصول", "خصوم", "حقوق ملكية", "إيرادات", "مصروفات"])
         with col_class2:
-            class_2 = st.text_input("التصنيف الثاني (class2) - مثال: أصول طويلة الأجل / مصروفات إدارية:")
+            class_2 = st.selectbox("التصنيف الثاني (class2):", ["أصول متداولة", "أصول ثابتة", "مصروفات إدارية وعمومية", "إيرادات نشاط", "أخرى"])
             
         save_acc_btn = st.form_submit_button("💾 حفظ الحساب")
         
         if save_acc_btn:
-            # فحص المدخلات والتأكد من عدم ترك خانات فارغة لتجنب Null Value
             clean_acc_num = acc_number.strip()
             clean_acc_name = account_name_input.strip()
             
             if clean_acc_num and clean_acc_name:
-                # 🛠️ إجبار حقل title و acc_name على أخذ القيمة المدخلة مباشرة لمنع الخطأ نهائياً
+                # تجميع البيانات وحقن حقل الـ title بشكل صريح وإجباري لمنع ظهور حقول فارغة (Null) سحابياً
                 new_acc_payload = {
                     "acc_id": clean_acc_num,
-                    "title": clean_acc_name,        # 👈 هذا السطر يحل المشكلة مباشرة
-                    "acc_name": clean_acc_name,     # تكرارها لضمان تغذية العمودين بالبيانات
+                    "title": clean_acc_name,        # العمود الحرج المسبب للخطأ السابق تم ملؤه بنجاح
+                    "acc_name": clean_acc_name,     
                     "amount_num": float(open_bal),
                     "type": acc_type,
-                    "class1": class_1.strip() if class_1.strip() else "عام",
+                    "class1": class_1,
+                    "class2": class_2
+                }
+                
+                if insert_account_to_erp(new_acc_payload):
