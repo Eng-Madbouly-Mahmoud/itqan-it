@@ -4,7 +4,7 @@ import pandas as pd
 from supabase import create_client, Client
 
 # 🔑 إعدادات الاتصال بقاعدة بيانات Supabase السحابية الفعالة لديك
-SUPABASE_URL = "https://stejbrmfjreoguuxohsr.supabase.co"
+SUPABASE_URL = "https://supabase.co"
 SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN0ZWpicm1manJlb2d1dXhvaHNyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA2Nzc4ODUsImV4cCI6MjEwNjI1Mzg4NX0.mCmdj3d5ltZca-nGr7XEQPhBBsTFyGTXn2HOqr8l7M8"
 
 # تهيئة عميل Supabase لمرة واحدة في الجلسة
@@ -130,15 +130,17 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# تقسيم واجهة المستخدم إلى تبويبات منفصلة وشاملة لكل الوظائف
-tab1, tab2, tab3, tab4 = st.tabs([
+# تقسيم واجهة المستخدم إلى التبويبات الستة الشاملة
+tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
     "📝 بوابة الدعم التقني", 
     "🖥️ لوحة تحكم الـ IT", 
     "🗂️ تكويد وحفظ شجرة الحسابات", 
-    "💵 إضافة قيد مالي وحفظه"
+    "💵 إضافة قيد مالي وحفظه",
+    "📖 دفتر الأستاذ المساعد",
+    "🛠️ تعديل وصيانة الحسابات والقيود"
 ])
 
-# 1️⃣ بوابة الموظفين (الدعم التقني البلاغات)
+# 1️⃣ بوابة الموظفين (البلاغات)
 with tab1:
     st.markdown("<h3 style='text-align: right; color: #8C6239;'>📥 تسجيل بلاغ عطل تقني جديد</h3>", unsafe_allow_html=True)
     with st.form("ticket_form", clear_on_submit=True):
@@ -173,14 +175,12 @@ with tab2:
             df_report = pd.DataFrame(st.session_state.tickets)
             st.dataframe(df_report[["ID", "name", "dept", "issue", "status", "solved_by", "created_at", "updated_at"]], use_container_width=True)
 
-# 3️⃣ تكويد شجرة الحسابات وحفظها (محدث ومتطابق مع الواجهتين: قائمة الدخل والميزانية)
+# 3️⃣ تكويد شجرة الحسابات وحفظها
 with tab3:
     st.markdown("<h3 style='text-align: right; color: #8C6239;'>🗂️ تكويد وإدراج حساب في شجرة الحسابات</h3>", unsafe_allow_html=True)
     
-    # القائمة العلوية لتحديد نوع القائمة (ميزانية / قائمة دخل)
     acc_type = st.selectbox("نوع الحساب الرئيسي:", ["ميزانية", "قائمة دخل"])
     
-    # تغيير اللون بناءً على الاختيار كما في واجهتك الرسومية
     if acc_type == "قائمة دخل":
         st.markdown("<div style='background-color: #FFEB3B; padding: 10px; border-radius: 5px; text-align: center; color: black; font-weight: bold;'>حسابات قائمة الدخل (أصفر) 🟡</div>", unsafe_allow_html=True)
     else:
@@ -208,10 +208,9 @@ with tab3:
             clean_acc_name = account_name_input.strip()
             
             if clean_acc_num and clean_acc_name:
-                # تجميع البيانات وحقن حقل الـ title بشكل صريح وإجباري لمنع ظهور حقول فارغة (Null) سحابياً
                 new_acc_payload = {
                     "acc_id": clean_acc_num,
-                    "title": clean_acc_name,        # العمود الحرج المسبب للخطأ السابق تم ملؤه بنجاح
+                    "title": clean_acc_name,        # حل مشكلة الـ null value
                     "acc_name": clean_acc_name,     
                     "amount_num": float(open_bal),
                     "type": acc_type,
@@ -220,3 +219,9 @@ with tab3:
                 }
                 
                 if insert_account_to_erp(new_acc_payload):
+                    st.success(f"✅ تم حفظ الحساب [{clean_acc_name}] بنجاح وتحديث قاعدة البيانات السحابية!")
+                    st.rerun()
+            else:
+                st.error("⚠️ خطأ: يرجى كتابة رقم الحساب واسم الحساب أولاً قبل الحفظ.")
+                
+    st.markdown("---")
