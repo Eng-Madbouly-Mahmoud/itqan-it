@@ -44,173 +44,150 @@ def insert_journal_entries(entries_list):
         return False
 
 # =========================================================
-# 📥 دالات نظام التذاكر والدعم الفني الحالية
-# =========================================================
-def load_data():
-    try:
-        response = supabase.table("tickets").select("*").order("id", desc=False).execute()
-        tickets = []
-        for row in response.data:
-            ticket = row.copy()
-            ticket['ID'] = row['id']
-            tickets.append(ticket)
-        return tickets
-    except Exception as e:
-        st.error(f"خطأ في جلب البيانات من السيرفر: {e}")
-        return []
-
-def insert_ticket(new_ticket):
-    try:
-        db_data = {
-            "id": int(new_ticket["ID"]),
-            "name": new_ticket["name"],
-            "dept": new_ticket["dept"],
-            "issue": new_ticket["issue"],
-            "status": new_ticket["status"],
-            "solved_by": new_ticket["solved_by"],
-            "created_at": new_ticket["created_at"],
-            "updated_at": new_ticket["updated_at"]
-        }
-        supabase.table("tickets").insert(db_data).execute()
-        return True
-    except Exception as e:
-        st.error(f"خطأ في حفظ التذكرة: {e}")
-        return False
-
-# تهيئة المخازن الافتراضية للجلسة بنظام التذاكر
-if 'tickets' not in st.session_state:
-    st.session_state.tickets = load_data()
-
-if 'next_id' not in st.session_state:
-    if st.session_state.tickets:
-        max_id = max([int(t['ID']) for t in st.session_state.tickets])
-        st.session_state.next_id = max_id + 1
-    else:
-        st.session_state.next_id = 101
-
-# إعدادات الصفحة والأيقونة الرئيسية للموقع
-st.set_page_config(
-    page_title="الدكتور صلاح حسب الله - مركز الإدارة الشامل - شركة إتقان",
-    page_icon="⚖️",
-    layout="wide"
-)
-
-# =========================================================
-# 💻 التصميم والهيدر الأساسي للمنظومة
+# 💻 الهيدر والتصميم الأساسي للمنظومة (المطابق لـ Eng Madbouly)
 # =========================================================
 st.markdown("""
-    <div style='background-color: #8C6239; padding: 25px; border-radius: 12px; margin-bottom: 5px; display: flex; align-items: center; justify-content: center; gap: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);'>
-        <div>
-            <h1 style='text-align: center; color: #F5EBE0; margin: 0; font-family: "Cairo", sans-serif; font-size: 32px; font-weight: bold;'>النظام السحابي الذكي المتكامل - شركة إتقان ⚖️</h1>
-            <p style='text-align: center; color: #E3D5CA; margin: 5px 0 0 0; font-size: 14px;'>لوحة إدارة البلاغات التقنية والموديول المحاسبي المطور بجوار بعضها البعض</p>
-        </div>
+    <div style='background-color: #1E3A8A; padding: 20px; border-radius: 10px; margin-bottom: 20px; text-align: center; box-shadow: 0 4px 6px rgba(0,0,0,0.1);'>
+        <h1 style='color: white; margin: 0; font-family: "Cairo", sans-serif; font-size: 28px; font-weight: bold;'>💼 Enterprise Resource Planning (ERP - Eng Madbouly)</h1>
+    </div>
+    <div style='text-align: right; color: #555; font-size: 14px; margin-bottom: 20px;'>
+        👤 المستخدم: المدير العام | 📅 التاريخ: 2026-10-06
     </div>
 """, unsafe_allow_html=True)
 
-st.markdown("""
-    <style>
-    .stTabs [data-baseweb="tab-list"] { gap: 10px; }
-    .stTabs [data-baseweb="tab"] {
-        background-color: #E3D5CA; border-radius: 4px 4px 0px 0px; padding: 10px 20px; color: #4A3728; font-weight: bold;
-    }
-    .stTabs [aria-selected="true"] { 
-        background-color: #8C6239 !important; color: #F5EBE0 !important;
-    }
-    </style>
-""", unsafe_allow_html=True)
+# زر الخروج المركزي المنسق
+col_exit, _ = st.columns([1, 5])
+with col_exit:
+    st.button("🚪 خروج", use_container_width=True)
 
-# تقسيم واجهة المستخدم إلى التبويبات الخمسة المتوازية والمضبوطة هندسياً
-tab1, tab2, tab3, tab4, tab5 = st.tabs([
-    "📝 بوابة الدعم التقني", 
-    "🖥️ لوحة تحكم الـ IT", 
-    "🗂️ شجرة الحسابات وتحديثها", 
-    "💵 إدارة القيود والسندات اليومية",
-    "📖 كشف دفتر الأستاذ المساعد"
-])
+st.markdown("<h2 style='text-align: right; color: #B45309;'>💰 إدارة الحسابات وحركة الخزنة المركزية</h2>", unsafe_allow_html=True)
 
-# 1️⃣ بوابة الموظفين (البلاغات)
-with tab1:
-    st.markdown("<h3 style='text-align: right; color: #8C6239;'>📥 تسجيل بلاغ عطل تقني جديد</h3>", unsafe_allow_html=True)
-    with st.form("ticket_form", clear_on_submit=True):
-        col_t1, col_t2 = st.columns(2)
-        with col_t1:
-            name = st.text_input("👤 اسم الموظف / المستشار بالكامل:")
-        with col_t2:
-            dept = st.selectbox("🏢 القسم / الإدارة التابع لها:", ["قسم الاداره العليا", "بنك مصر", "بنك الاهلي", "التجاري الدولي", "الادمن", "إدارة عامة", "أخرى"])
-        issue = st.text_area("⚠️ وصف العطل التقني بالتفصيل:")
-        submit = st.form_submit_button("🚀 إرسال التذكرة")
-        
-        if submit:
-            if name.strip() and issue.strip():
-                current_time = datetime.now().strftime("%Y-%m-%d %I:%M %p")
-                new_ticket = {
-                    "ID": int(st.session_state.next_id), "name": name, "dept": dept, "issue": issue,
-                    "status": "Pending (قيد الانتظار)", "solved_by": "لم تُحل بعد ⏳", "created_at": current_time, "updated_at": "لم تُحدث بعد"
-                }
-                if insert_ticket(new_ticket):
-                    st.session_state.tickets.append(new_ticket)
-                    st.success(f"🎉 تم تسجيل بلاغك بنجاح! رقم التذكرة هو: #{st.session_state.next_id}")
-                    st.session_state.next_id += 1
-                    st.rerun()
+# =========================================================
+# 🛠️ هندسة واجهة التاب الاحترافية (بجوار بعضها البعض تماماً)
+# =========================================================
+if 'current_tab' not in st.session_state:
+    st.session_state.current_tab = "تكويد الشجرة"
 
-# 2️⃣ لوحة تحكم الـ IT
-with tab2:
-    st.markdown("<h3 style='text-align: right; color: #8C6239;'>🖥️ شاشة إدارة الأعطال الحالية</h3>", unsafe_allow_html=True)
-    password = st.text_input("🔑 أدخل كلمة مرور الإدارة لتحديث التذاكر:", type="password")
-    if password == "1234":
-        st.success("🔓 تم تفعيل صلاحيات المهندس المسؤول.")
-        st.session_state.tickets = load_data()
-        if st.session_state.tickets:
-            df_report = pd.DataFrame(st.session_state.tickets)
-            st.dataframe(df_report[["ID", "name", "dept", "issue", "status", "solved_by", "created_at", "updated_at"]], use_container_width=True)
+# إنشاء 4 أزرار متجاورة وممتدة تمثل التبويبات الاحترافية في صف واحد أفقي
+btn_col1, btn_col2, btn_col3, btn_col4 = st.columns(4)
 
-# 3️⃣ تكويد شجرة الحسابات وحفظها (الخانات بجوار بعضها البعض + ميزة التعديل المباشر)
-with tab3:
-    st.markdown("<h3 style='text-align: right; color: #8C6239;'>🗂️ إدارة وهيكلة شجرة الحسابات العامة</h3>", unsafe_allow_html=True)
+with btn_col1:
+    if st.button("🗂️ تكويد وإدراج حساب بالشجرة", use_container_width=True, type="primary" if st.session_state.current_tab == "تكويد الشجرة" else "secondary"):
+        st.session_state.current_tab = "تكويد الشجرة"
+        st.rerun()
+
+with btn_col2:
+    if st.button("💵 إضافة حركة مالية (قيد سند)", use_container_width=True, type="primary" if st.session_state.current_tab == "إضافة قيد" else "secondary"):
+        st.session_state.current_tab = "إضافة قيد"
+        st.rerun()
+
+with btn_col3:
+    if st.button("📖 دفتر الأستاذ المساعد", use_container_width=True, type="primary" if st.session_state.current_tab == "الأستاذ المساعد" else "secondary"):
+        st.session_state.current_tab = "الأستاذ المساعد"
+        st.rerun()
+
+with btn_col4:
+    if st.button("🛠️ لوحة التعديل والحذف السرية", use_container_width=True, type="primary" if st.session_state.current_tab == "لوحة التحكم" else "secondary"):
+        st.session_state.current_tab = "لوحة التحكم"
+        st.rerun()
+
+st.markdown("---")
+
+# جلب الحسابات الحالية لتغذية القوائم المنسدلة في كل الأقسام
+accounts_list = load_accounts_from_erp()
+
+# =========================================================
+# 1️⃣ التبويب الأول: تكويد وإدراج حساب في شجرة الحسابات
+# =========================================================
+if st.session_state.current_tab == "تكويد الشجرة":
+    st.markdown("<h3 style='text-align: right; color: #1E3A8A;'>🗂️ تكويد وإدراج حساب في شجرة الحسابات</h3>", unsafe_allow_html=True)
     
-    # جلب الحسابات لخيارات الصيانة والتعديل
-    accounts_list = load_accounts_from_erp()
-    
-    col_mode, col_main_type = st.columns(2)
-    with col_mode:
-        operation_mode = st.radio("اختر العملية المراد تنفيذها:", ["إضافة حساب جديد ➕", "تعديل حساب قائم حالياً ✏️"], horizontal=True)
-    with col_main_type:
-        acc_type = st.selectbox("نوع الحساب الرئيسي:", ["ميزانية", "قائمة دخل"])
+    acc_type = st.selectbox("نوع الحساب الرئيسي:", ["قائمة دخل", "ميزانية"])
     
     if acc_type == "قائمة دخل":
-        st.markdown("<div style='background-color: #FFEB3B; padding: 6px; border-radius: 5px; text-align: center; color: black; font-weight: bold; margin-bottom:15px;'>حسابات قائمة الدخل (أصفر) 🟡</div>", unsafe_allow_html=True)
+        st.markdown("<div style='background-color: #FFEB3B; padding: 10px; border-radius: 5px; text-align: center; color: black; font-weight: bold; margin-bottom: 20px;'>حسابات قائمة الدخل (أصفر) 🟡</div>", unsafe_allow_html=True)
     else:
-        st.markdown("<div style='background-color: #4CAF50; padding: 6px; border-radius: 5px; text-align: center; color: white; font-weight: bold; margin-bottom:15px;'>حسابات الميزانية (أخضر) 🟢</div>", unsafe_allow_html=True)
+        st.markdown("<div style='background-color: #4CAF50; padding: 10px; border-radius: 5px; text-align: center; color: white; font-weight: bold; margin-bottom: 20px;'>حسابات الميزانية (أخضر) 🟢</div>", unsafe_allow_html=True)
 
-    # حالة الإضافة
-    if operation_mode == "إضافة حساب جديد ➕":
-        with st.form("account_tree_form", clear_on_submit=True):
-            # جعل خانات المدخلات بجوار بعضها البعض تماماً في صف واحد متوازن
-            col1, col2, col3 = st.columns(3)
-            with col1:
-                acc_number = st.text_input("رقم الحساب (acc_id):", placeholder="مثال: 10001")
-            with col2:
-                account_name_input = st.text_input("اسم الحساب (Account Name):", placeholder="مثال: الخزينة الرئيسية")
-            with col3:
-                open_bal = st.number_input("الرصيد الافتتاحي (amount_num) $:", min_value=0.0, value=0.0, step=10.0)
-                
-            col4, col5 = st.columns(2)
-            with col4:
-                class_1 = st.selectbox("التصنيف الأول (class1):", ["أصول", "خصوم", "حقوق ملكية", "إيرادات", "مصروفات"])
-            with col5:
-                class_2 = st.selectbox("التصنيف الثاني (class2):", ["أصول متداولة", "أصول ثابتة", "مصروفات إدارية وعمومية", "إيرادات نشاط", "أخرى"])
-                
-            save_acc_btn = st.form_submit_button("💾 حفظ وإدراج الحساب بالشجرة")
+    with st.form("account_tree_form", clear_on_submit=True):
+        # 🛠️ جعل الخانات بجوار بعضها البعض تماماً في صف واحد متوازي مريح للعين
+        c1, c2, c3 = st.columns(3)
+        with c1:
+            acc_number = st.text_input("رقم الحساب (acc_id):", placeholder="مثال: 10001")
+        with c2:
+            account_name_input = st.text_input("اسم الحساب (Account Name):", placeholder="أدخل اسم الحساب هنا")
+        with c3:
+            open_bal = st.number_input("الرصيد الافتتاحي (amount_num) $:", min_value=0.0, value=0.0, step=10.0)
             
-            if save_acc_btn:
-                if acc_number.strip() and account_name_input.strip():
-                    new_acc_payload = {
-                        "acc_id": acc_number.strip(), "title": account_name_input.strip(), "acc_name": account_name_input.strip(),     
-                        "amount_num": float(open_bal), "type": acc_type, "class1": class_1, "class2": class_2
-                    }
-                    if insert_account_to_erp(new_acc_payload):
-                        st.success(f"✅ تم حفظ الحساب [{account_name_input}] بنجاح في قاعدة البيانات السحابية!")
-                        st.rerun()
-                else:
-                    st.error("⚠️ خطأ: يرجى كتابة رقم الحساب واسمه بالكامل.")
+        c4, c5 = st.columns(2)
+        with c4:
+            class_1 = st.selectbox("التصنيف الأول (class1):", ["إيرادات", "مصروفات", "أصول ثابتة", "أصول متداولة", "التزامات"])
+        with c5:
+            class_2 = st.selectbox("التصنيف الثاني (class2):", ["مصروفات إدارية وعمومية", "إيرادات نشاط", "تكلفة مبيعات", "أخرى"])
+            
+        save_acc_btn = st.form_submit_button("💾 حفظ الحساب بالشجرة")
+        
+        if save_acc_btn:
+            if acc_number.strip() and account_name_input.strip():
+                new_acc_payload = {
+                    "acc_id": acc_number.strip(), "title": account_name_input.strip(), "acc_name": account_name_input.strip(),     
+                    "amount_num": float(open_bal), "type": acc_type, "class1": class_1, "class2": class_2
+                }
+                if insert_account_to_erp(new_acc_payload):
+                    st.success(f"🎉 تم حفظ الحساب [{account_name_input}] بنجاح وتحديث الشجرة!")
+                    st.rerun()
+            else:
+                st.error("❌ خطأ: يرجى كتابة رقم الحساب واسمه بالكامل قبل الحفظ.")
 
+# =========================================================
+# 2️⃣ التبويب الثاني: إضافة حركة مالية (قيد سند)
+# =========================================================
+elif st.session_state.current_tab == "إضافة قيد":
+    st.markdown("<h3 style='text-align: right; color: #1E3A8A;'>💵 إضافة حركة مالية وتوجيه القيود السندات</h3>", unsafe_allow_html=True)
+    
+    account_options = [f"{acc['acc_id']} - {acc['title']}" for acc in accounts_list]
+    
+    if not account_options:
+        st.warning("⚠️ لا توجد حسابات متوفرة! يرجى تكويد شجرة الحسابات أولاً من التبويب السابق.")
+    else:
+        with st.form("journal_form", clear_on_submit=True):
+            # جعل الخانات الأساسية للقيد متوازية بجانب بعضها البعض
+            cg1, cg2, cg3 = st.columns(3)
+            with cg1:
+                entry_id = st.number_input("رقم القيد المتسلسل:", min_value=1, step=1, value=1)
+            with cg2:
+                entry_date = st.date_input("تاريخ استحقاق الحركة:", value=datetime.today())
+            with cg3:
+                entry_desc = st.text_input("البيان والشرح العام للحركة المالية:")
+                
+            st.markdown("<p style='color:#B45309; font-weight:bold;'>⚖️ أطراف المعاملة المالية (مدين ودائن متوازيين):</p>", unsafe_allow_html=True)
+            
+            # صف الطرف المدين
+            col_deb_acc, col_deb_val = st.columns([3, 1])
+            with col_deb_acc:
+                deb_acc_selected = st.selectbox("حساب الطرف المدين (من حـ/):", options=account_options, key="deb_s")
+            with col_deb_val:
+                deb_val = st.number_input("المبلغ المدين:", min_value=0.0, step=50.0, key="deb_v")
+                
+            # صف الطرف الدائن مقابله تماماً
+            col_cred_acc, col_cred_val = st.columns([3, 1])
+            with col_cred_acc:
+                cred_acc_selected = st.selectbox("حساب الطرف الدائن (إلى حـ/):", options=account_options, key="cred_s")
+            with col_cred_val:
+                credit_val = st.number_input("المبلغ الدائن:", min_value=0.0, step=50.0, key="cred_v")
+                
+            submit_journal = st.form_submit_button("🚀 ترحيل وحفظ القيد ماليًا")
+            
+            if submit_journal:
+                if deb_val <= 0 or credit_val <= 0:
+                    st.error("❌ خطأ: لا يمكن تسجيل قيد بقيمة صفر.")
+                elif deb_val != credit_val:
+                    st.error(f"❌ قيد غير متوازن ماليًا! المدين ({deb_val}) يجب أن يساوي الدائن ({credit_val}).")
+                elif deb_acc_selected == cred_acc_selected:
+                    st.error("❌ خطأ محاسبي: لا يمكن اختيار نفس الحساب للطرفين المدين والدائن.")
+                else:
+                    deb_acc_num = deb_acc_selected.split(" - ")[0]
+                    cred_acc_num = cred_acc_selected.split(" - ")[0]
+                    
+                    bulk_entries = [
+                        {"entry_number": int(entry_id), "entry_date": str(entry_date), "acc_id": deb_acc_num, "debit": float(deb_val), "credit": 0.0, "description": entry_desc},
