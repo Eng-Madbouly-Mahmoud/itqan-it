@@ -4,7 +4,7 @@ import pandas as pd
 from supabase import create_client, Client
 
 # 🔑 إعدادات الاتصال بقاعدة بيانات Supabase السحابية
-SUPABASE_URL = "https://stejbrmfjreoguuxohsr.supabase.co"
+SUPABASE_URL = "https://supabase.co"
 SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN0ZWpicm1manJlb2d1dXhvaHNyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA2Nzc4ODUsImV4cCI6MjEwNjI1Mzg4NX0.mCmdj3d5ltZca-nGr7XEQPhBBsTFyGTXn2HOqr8l7M8"
 
 # تهيئة عميل Supabase لمرة واحدة في الجلسة
@@ -16,31 +16,31 @@ def get_supabase_client() -> Client:
 supabase = get_supabase_client()
 
 # =========================================================
-# 📥 دالات التعامل مع الحسابات والقيود الممالية (جديد)
+# 📥 دالات الموديول المالي (شجرة الحسابات والقيود اليومية)
 # =========================================================
 
-# دالة حفظ حساب جديد في الشجرة السحابية
-def insert_account(acc_data):
+# دالة حفظ حساب جديد في جدول erp_finance المتوافق مع قاعدة بياناتك
+def insert_account_to_erp(acc_data):
     try:
-        supabase.table("accounts").insert(acc_data).execute()
+        supabase.table("erp_finance").insert(acc_data).execute()
         return True
     except Exception as e:
-        st.error(f"خطأ في حفظ الحساب الجديد: {e}")
+        st.error(f"خطأ في حفظ الحساب الجديد بجدول erp_finance: {e}")
         return False
 
-# دالة جلب الحسابات المسجلة
-def load_accounts():
+# دالة جلب الحسابات المسجلة من جدول erp_finance
+def load_accounts_from_erp():
     try:
-        response = supabase.table("accounts").select("*").order("account_number", desc=False).execute()
+        response = supabase.table("erp_finance").select("*").order("acc_id", desc=False).execute()
         return response.data
     except Exception as e:
         st.error(f"خطأ في جلب شجرة الحسابات: {e}")
         return []
 
-# دالة حفظ قيود اليومية دفعة واحدة لضمان حفظ الأطراف كاملة
+# دالة حفظ قيود اليومية المركبة في جدول erp_journal_entries
 def insert_journal_entries(entries_list):
     try:
-        supabase.table("journal_entries").insert(entries_list).execute()
+        supabase.table("erp_journal_entries").insert(entries_list).execute()
         return True
     except Exception as e:
         st.error(f"خطأ في حفظ القيد المالي: {e}")
@@ -88,7 +88,7 @@ def update_ticket_in_db(ticket_id, updated_fields):
         st.error(f"خطأ في تحديث التذكرة: {e}")
         return False
 
-# تهيئة المخازن الافتراضية للجلسة
+# تهيئة المخازن الافتراضية للجلسة بنظام التذاكر
 if 'tickets' not in st.session_state:
     st.session_state.tickets = load_data()
 
@@ -107,13 +107,13 @@ st.set_page_config(
 )
 
 # =========================================================
-# 💻 التصميم والهيدر الأساسي للنظام
+# 💻 التصميم والهيدر الأساسي للمنظومة
 # =========================================================
 st.markdown("""
     <div style='background-color: #8C6239; padding: 25px; border-radius: 12px; margin-bottom: 5px; display: flex; align-items: center; justify-content: center; gap: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);'>
         <div>
             <h1 style='text-align: center; color: #F5EBE0; margin: 0; font-family: "Cairo", sans-serif; font-size: 32px; font-weight: bold;'>النظام السحابي الذكي المتكامل - شركة إتقان ⚖️</h1>
-            <p style='text-align: center; color: #E3D5CA; margin: 5px 0 0 0; font-size: 14px;'>إدارة البلاغات التقنية والموديول المالي للحسابات</p>
+            <p style='text-align: center; color: #E3D5CA; margin: 5px 0 0 0; font-size: 14px;'>لوحة إدارة البلاغات التقنية والموديول المحاسبي المطور</p>
         </div>
     </div>
 """, unsafe_allow_html=True)
@@ -130,7 +130,7 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# إضافة التبويبات المالية الجديدة للنظام
+# تقسيم واجهة المستخدم إلى تبويبات منفصلة وشاملة لكل الوظائف
 tab1, tab2, tab3, tab4 = st.tabs([
     "📝 بوابة الدعم التقني", 
     "🖥️ لوحة تحكم الـ IT", 
@@ -138,7 +138,7 @@ tab1, tab2, tab3, tab4 = st.tabs([
     "💵 إضافة قيد مالي وحفظه"
 ])
 
-# 1️⃣ بوابة الموظفين (الدعم التقني)
+# 1️⃣ بوابة الموظفين (الدعم التقني البلاغات)
 with tab1:
     st.markdown("<h3 style='text-align: right; color: #8C6239;'>📥 تسجيل بلاغ عطل تقني جديد</h3>", unsafe_allow_html=True)
     with st.form("ticket_form", clear_on_submit=True):
@@ -164,8 +164,8 @@ with tab1:
 
 # 2️⃣ لوحة تحكم الـ IT
 with tab2:
-    st.markdown("<h3 style='text-align: right; color: #8C6239;'>🖥️ شاشة إدارة الأعطال</h3>", unsafe_allow_html=True)
-    password = st.text_input("🔑 أدخل كلمة مرور الإدارة:", type="password")
+    st.markdown("<h3 style='text-align: right; color: #8C6239;'>🖥️ شاشة إدارة الأعطال الحالية</h3>", unsafe_allow_html=True)
+    password = st.text_input("🔑 أدخل كلمة مرور الإدارة لتحديث التذاكر:", type="password")
     if password == "1234":
         st.success("🔓 تم تفعيل صلاحيات المهندس المسؤول.")
         st.session_state.tickets = load_data()
@@ -173,61 +173,53 @@ with tab2:
             df_report = pd.DataFrame(st.session_state.tickets)
             st.dataframe(df_report[["ID", "name", "dept", "issue", "status", "solved_by", "created_at", "updated_at"]], use_container_width=True)
 
-# 3️⃣ تكويد شجرة الحسابات وحفظها (مستوحى من واجهتك الرسومية)
+# 3️⃣ تكويد شجرة الحسابات وحفظها (متوافق بالكامل مع جدول erp_finance الفعلي)
 with tab3:
     st.markdown("<h3 style='text-align: right; color: #8C6239;'>🗂️ تكويد وإدراج حساب في شجرة الحسابات</h3>", unsafe_allow_html=True)
     
     with st.form("account_tree_form", clear_on_submit=True):
         col_acc1, col_acc2, col_acc3 = st.columns(3)
         with col_acc1:
-            acc_num = st.text_input("رقم الحساب (مثال: 10001):")
+            acc_number = st.text_input("رقم الحساب (acc_id) - مثال: 10001:")
         with col_acc2:
-            acc_name = st.text_input("اسم الحساب (Account Name):")
+            account_title = st.text_input("عنوان/اسم الحساب في المنظومة (title):")
         with col_acc3:
-            open_bal = st.number_input(" الرصيد الافتتاحي ($):", min_value=0.0, value=0.0, step=10.0)
+            open_bal = st.number_input("الرصيد الافتتاحي (amount_num) $:", min_value=0.0, value=0.0, step=10.0)
             
-        col_class1, col_class2 = st.columns(2)
+        col_class1, col_class2, col_name = st.columns(3)
         with col_class1:
-            class_1 = st.selectbox("التصنيف الأول:", ["إيرادات", "مصروفات", "أصول ثابتة", "أصول متداولة", "التزامات"])
+            class_1 = st.selectbox("التصنيف الأول (class1):", ["إيرادات", "مصروفات", "أصول ثابتة", "أصول متداولة", "التزامات"])
         with col_class2:
-            class_2 = st.selectbox("التصنيف الثاني:", ["مصروفات إدارية وعمومية", "إيرادات نشاط", "تكلفة مبيعات", "أخرى"])
+            class_2 = st.selectbox("التصنيف الثاني (class2):", ["مصروفات إدارية وعمومية", "إيرادات نشاط", "تكلفة مبيعات", "أخرى"])
+        with col_name:
+            actual_name = st.text_input("الاسم التفصيلي للحساب المحاسبي (acc_name):")
             
-        acc_type = st.selectbox("قائمة دخول / حساب ميزانية عمومية:", ["حسابات قائمة الدخل (أصفر)", "حسابات الميزانية العمومية"])
+        acc_type = st.selectbox("قائمة دخول / حساب ميزانية عمومية (type):", ["حسابات قائمة الدخل (أصفر)", "حسابات الميزانية"])
         
         save_acc_btn = st.form_submit_button("💾 حفظ الحساب في الشجرة السحابية")
         
         if save_acc_btn:
-            if acc_num.strip() and acc_name.strip():
-                new_acc = {
-                    "account_number": acc_num.strip(),
-                    "account_name": acc_name.strip(),
-                    "account_type": acc_type,
-                    "classification_1": class_1,
-                    "classification_2": class_2,
-                    "opening_balance": float(open_bal)
+            if acc_number.strip() and account_title.strip():
+                # بناء هيكل البيانات ليتطابق حرفياً مع أعمدة جدول erp_finance لحل خطأ الـ NOT NULL
+                new_acc_payload = {
+                    "acc_id": acc_number.strip(),
+                    "title": account_title.strip(), 
+                    "acc_name": actual_name.strip() if actual_name.strip() else account_title.strip(),
+                    "amount_num": float(open_bal),
+                    "type": acc_type,
+                    "class1": class_1,
+                    "class2": class_2
                 }
-                if insert_account(new_acc):
-                    st.success(f"✅ تم حفظ الحساب [{acc_name}] بنجاح وتحديث شجرة الحسابات!")
+                
+                if insert_account_to_erp(new_acc_payload):
+                    st.success(f"✅ تم حفظ الحساب [{account_title}] بنجاح في جدول erp_finance!")
                     st.rerun()
             else:
-                st.error("⚠️ يرجى ملء رقم الحساب واسمه بالكامل قبل الحفظ.")
+                st.error("⚠️ يرجى ملء الحقول الإلزامية: رقم الحساب (acc_id) وعنوان الحساب (title) أولاً.")
                 
     st.markdown("---")
-    st.markdown("#### 🔍 الحسابات الحالية المسجلة في النظام السحابي:")
-    current_accounts = load_accounts()
-    if current_accounts:
-        st.dataframe(pd.DataFrame(current_accounts)[["account_number", "account_name", "account_type", "classification_1", "opening_balance"]], use_container_width=True)
-    else:
-        st.info("لا توجد حسابات مكوّدة بعد.")
-
-# 4️⃣ إضافة قيد مالي وحفظه
-with tab4:
-    st.markdown("<h3 style='text-align: right; color: #8C6239;'>💵 تسجيل السندات والقيود اليومية المركبة</h3>", unsafe_allow_html=True)
+    st.markdown("#### 🔍 شجرة الحسابات الحالية المسترجعة سحابياً:")
     
-    # جلب الحسابات لخيارات القائمة المنسدلة
-    accounts_list = load_accounts()
-    account_options = [f"{acc['account_number']} - {acc['account_name']}" for acc in accounts_list]
-    
-    if not account_options:
-        st.warning("⚠️ لا توجد حسابات متوفرة للتوجيه المحاسبي! يرجى تكويد الحسابات أولاً في التبويب السابق.")
-    else:
+    current_erp_accounts = load_accounts_from_erp()
+    if current_erp_accounts:
+        df_erp = pd.DataFrame(current_erp_accounts)
