@@ -16,10 +16,9 @@ def get_supabase_client() -> Client:
 supabase = get_supabase_client()
 
 # =========================================================
-# 📥 دالات الموديول المالي (شجرة الحسابات والقيود اليومية)
+# 📥 دالات الموديول المالي المطورة (الحفظ، التحديث، والجلب)
 # =========================================================
 
-# دالة حفظ حساب جديد في جدول erp_finance المتوافق مع قاعدة بياناتك
 def insert_account_to_erp(acc_data):
     try:
         supabase.table("erp_finance").insert(acc_data).execute()
@@ -28,7 +27,6 @@ def insert_account_to_erp(acc_data):
         st.error(f"خطأ في حفظ الحساب الجديد بجدول erp_finance: {e}")
         return False
 
-# دالة جلب الحسابات المسجلة من جدول erp_finance
 def load_accounts_from_erp():
     try:
         response = supabase.table("erp_finance").select("*").order("acc_id", desc=False).execute()
@@ -37,7 +35,6 @@ def load_accounts_from_erp():
         st.error(f"خطأ في جلب شجرة الحسابات: {e}")
         return []
 
-# دالة حفظ قيود اليومية المركبة في جدول erp_journal_entries
 def insert_journal_entries(entries_list):
     try:
         supabase.table("erp_journal_entries").insert(entries_list).execute()
@@ -80,14 +77,6 @@ def insert_ticket(new_ticket):
         st.error(f"خطأ في حفظ التذكرة: {e}")
         return False
 
-def update_ticket_in_db(ticket_id, updated_fields):
-    try:
-        supabase.table("tickets").update(updated_fields).eq("id", ticket_id).execute()
-        return True
-    except Exception as e:
-        st.error(f"خطأ في تحديث التذكرة: {e}")
-        return False
-
 # تهيئة المخازن الافتراضية للجلسة بنظام التذاكر
 if 'tickets' not in st.session_state:
     st.session_state.tickets = load_data()
@@ -113,7 +102,7 @@ st.markdown("""
     <div style='background-color: #8C6239; padding: 25px; border-radius: 12px; margin-bottom: 5px; display: flex; align-items: center; justify-content: center; gap: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);'>
         <div>
             <h1 style='text-align: center; color: #F5EBE0; margin: 0; font-family: "Cairo", sans-serif; font-size: 32px; font-weight: bold;'>النظام السحابي الذكي المتكامل - شركة إتقان ⚖️</h1>
-            <p style='text-align: center; color: #E3D5CA; margin: 5px 0 0 0; font-size: 14px;'>لوحة إدارة البلاغات التقنية والموديول المحاسبي المطور</p>
+            <p style='text-align: center; color: #E3D5CA; margin: 5px 0 0 0; font-size: 14px;'>لوحة إدارة البلاغات التقنية والموديول المحاسبي المطور بجوار بعضها البعض</p>
         </div>
     </div>
 """, unsafe_allow_html=True)
@@ -130,22 +119,24 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# تقسيم واجهة المستخدم إلى التبويبات الستة الشاملة
-tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
+# تقسيم واجهة المستخدم إلى التبويبات الخمسة المتوازية والمضبوطة هندسياً
+tab1, tab2, tab3, tab4, tab5 = st.tabs([
     "📝 بوابة الدعم التقني", 
     "🖥️ لوحة تحكم الـ IT", 
-    "🗂️ تكويد وحفظ شجرة الحسابات", 
-    "💵 إضافة قيد مالي وحفظه",
-    "📖 دفتر الأستاذ المساعد",
-    "🛠️ تعديل وصيانة الحسابات والقيود"
+    "🗂️ شجرة الحسابات وتحديثها", 
+    "💵 إدارة القيود والسندات اليومية",
+    "📖 كشف دفتر الأستاذ المساعد"
 ])
 
 # 1️⃣ بوابة الموظفين (البلاغات)
 with tab1:
     st.markdown("<h3 style='text-align: right; color: #8C6239;'>📥 تسجيل بلاغ عطل تقني جديد</h3>", unsafe_allow_html=True)
     with st.form("ticket_form", clear_on_submit=True):
-        name = st.text_input("👤 اسم الموظف / المستشار بالكامل:")
-        dept = st.selectbox("🏢 القسم / الإدارة التابع لها:", ["قسم الاداره العليا", "بنك مصر", "بنك الاهلي", "التجاري الدولي", "الادمن", "إدارة عامة", "أخرى"])
+        col_t1, col_t2 = st.columns(2)
+        with col_t1:
+            name = st.text_input("👤 اسم الموظف / المستشار بالكامل:")
+        with col_t2:
+            dept = st.selectbox("🏢 القسم / الإدارة التابع لها:", ["قسم الاداره العليا", "بنك مصر", "بنك الاهلي", "التجاري الدولي", "الادمن", "إدارة عامة", "أخرى"])
         issue = st.text_area("⚠️ وصف العطل التقني بالتفصيل:")
         submit = st.form_submit_button("🚀 إرسال التذكرة")
         
@@ -161,8 +152,6 @@ with tab1:
                     st.success(f"🎉 تم تسجيل بلاغك بنجاح! رقم التذكرة هو: #{st.session_state.next_id}")
                     st.session_state.next_id += 1
                     st.rerun()
-            else:
-                st.error("❌ الرجاء كتابة الاسم ووصف العطل أولاً!")
 
 # 2️⃣ لوحة تحكم الـ IT
 with tab2:
@@ -175,53 +164,53 @@ with tab2:
             df_report = pd.DataFrame(st.session_state.tickets)
             st.dataframe(df_report[["ID", "name", "dept", "issue", "status", "solved_by", "created_at", "updated_at"]], use_container_width=True)
 
-# 3️⃣ تكويد شجرة الحسابات وحفظها
+# 3️⃣ تكويد شجرة الحسابات وحفظها (الخانات بجوار بعضها البعض + ميزة التعديل المباشر)
 with tab3:
-    st.markdown("<h3 style='text-align: right; color: #8C6239;'>🗂️ تكويد وإدراج حساب في شجرة الحسابات</h3>", unsafe_allow_html=True)
+    st.markdown("<h3 style='text-align: right; color: #8C6239;'>🗂️ إدارة وهيكلة شجرة الحسابات العامة</h3>", unsafe_allow_html=True)
     
-    acc_type = st.selectbox("نوع الحساب الرئيسي:", ["ميزانية", "قائمة دخل"])
+    # جلب الحسابات لخيارات الصيانة والتعديل
+    accounts_list = load_accounts_from_erp()
+    
+    col_mode, col_main_type = st.columns(2)
+    with col_mode:
+        operation_mode = st.radio("اختر العملية المراد تنفيذها:", ["إضافة حساب جديد ➕", "تعديل حساب قائم حالياً ✏️"], horizontal=True)
+    with col_main_type:
+        acc_type = st.selectbox("نوع الحساب الرئيسي:", ["ميزانية", "قائمة دخل"])
     
     if acc_type == "قائمة دخل":
-        st.markdown("<div style='background-color: #FFEB3B; padding: 10px; border-radius: 5px; text-align: center; color: black; font-weight: bold;'>حسابات قائمة الدخل (أصفر) 🟡</div>", unsafe_allow_html=True)
+        st.markdown("<div style='background-color: #FFEB3B; padding: 6px; border-radius: 5px; text-align: center; color: black; font-weight: bold; margin-bottom:15px;'>حسابات قائمة الدخل (أصفر) 🟡</div>", unsafe_allow_html=True)
     else:
-        st.markdown("<div style='background-color: #4CAF50; padding: 10px; border-radius: 5px; text-align: center; color: white; font-weight: bold;'>حسابات الميزانية (أخضر) 🟢</div>", unsafe_allow_html=True)
-        
-    with st.form("account_tree_form", clear_on_submit=True):
-        col_acc1, col_acc2, col_acc3 = st.columns(3)
-        with col_acc1:
-            acc_number = st.text_input("رقم الحساب (acc_id) - مثال: 10001:")
-        with col_acc2:
-            account_name_input = st.text_input("اسم الحساب (Account Name):")
-        with col_acc3:
-            open_bal = st.number_input("الرصيد الافتتاحي (amount_num) $:", min_value=0.0, value=0.0, step=10.0)
-            
-        col_class1, col_class2 = st.columns(2)
-        with col_class1:
-            class_1 = st.selectbox("التصنيف الأول (class1):", ["أصول", "خصوم", "حقوق ملكية", "إيرادات", "مصروفات"])
-        with col_class2:
-            class_2 = st.selectbox("التصنيف الثاني (class2):", ["أصول متداولة", "أصول ثابتة", "مصروفات إدارية وعمومية", "إيرادات نشاط", "أخرى"])
-            
-        save_acc_btn = st.form_submit_button("💾 حفظ الحساب")
-        
-        if save_acc_btn:
-            clean_acc_num = acc_number.strip()
-            clean_acc_name = account_name_input.strip()
-            
-            if clean_acc_num and clean_acc_name:
-                new_acc_payload = {
-                    "acc_id": clean_acc_num,
-                    "title": clean_acc_name,        # حل مشكلة الـ null value
-                    "acc_name": clean_acc_name,     
-                    "amount_num": float(open_bal),
-                    "type": acc_type,
-                    "class1": class_1,
-                    "class2": class_2
-                }
+        st.markdown("<div style='background-color: #4CAF50; padding: 6px; border-radius: 5px; text-align: center; color: white; font-weight: bold; margin-bottom:15px;'>حسابات الميزانية (أخضر) 🟢</div>", unsafe_allow_html=True)
+
+    # حالة الإضافة
+    if operation_mode == "إضافة حساب جديد ➕":
+        with st.form("account_tree_form", clear_on_submit=True):
+            # جعل خانات المدخلات بجوار بعضها البعض تماماً في صف واحد متوازن
+            col1, col2, col3 = st.columns(3)
+            with col1:
+                acc_number = st.text_input("رقم الحساب (acc_id):", placeholder="مثال: 10001")
+            with col2:
+                account_name_input = st.text_input("اسم الحساب (Account Name):", placeholder="مثال: الخزينة الرئيسية")
+            with col3:
+                open_bal = st.number_input("الرصيد الافتتاحي (amount_num) $:", min_value=0.0, value=0.0, step=10.0)
                 
-                if insert_account_to_erp(new_acc_payload):
-                    st.success(f"✅ تم حفظ الحساب [{clean_acc_name}] بنجاح وتحديث قاعدة البيانات السحابية!")
-                    st.rerun()
-            else:
-                st.error("⚠️ خطأ: يرجى كتابة رقم الحساب واسم الحساب أولاً قبل الحفظ.")
+            col4, col5 = st.columns(2)
+            with col4:
+                class_1 = st.selectbox("التصنيف الأول (class1):", ["أصول", "خصوم", "حقوق ملكية", "إيرادات", "مصروفات"])
+            with col5:
+                class_2 = st.selectbox("التصنيف الثاني (class2):", ["أصول متداولة", "أصول ثابتة", "مصروفات إدارية وعمومية", "إيرادات نشاط", "أخرى"])
                 
-    st.markdown("---")
+            save_acc_btn = st.form_submit_button("💾 حفظ وإدراج الحساب بالشجرة")
+            
+            if save_acc_btn:
+                if acc_number.strip() and account_name_input.strip():
+                    new_acc_payload = {
+                        "acc_id": acc_number.strip(), "title": account_name_input.strip(), "acc_name": account_name_input.strip(),     
+                        "amount_num": float(open_bal), "type": acc_type, "class1": class_1, "class2": class_2
+                    }
+                    if insert_account_to_erp(new_acc_payload):
+                        st.success(f"✅ تم حفظ الحساب [{account_name_input}] بنجاح في قاعدة البيانات السحابية!")
+                        st.rerun()
+                else:
+                    st.error("⚠️ خطأ: يرجى كتابة رقم الحساب واسمه بالكامل.")
+
