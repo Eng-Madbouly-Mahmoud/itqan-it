@@ -173,53 +173,48 @@ with tab2:
             df_report = pd.DataFrame(st.session_state.tickets)
             st.dataframe(df_report[["ID", "name", "dept", "issue", "status", "solved_by", "created_at", "updated_at"]], use_container_width=True)
 
-# 3️⃣ تكويد شجرة الحسابات وحفظها (متوافق بالكامل مع جدول erp_finance الفعلي)
+# 3️⃣ تكويد شجرة الحسابات وحفظها (محدث ومتطابق مع الواجهتين: قائمة الدخل والميزانية)
 with tab3:
     st.markdown("<h3 style='text-align: right; color: #8C6239;'>🗂️ تكويد وإدراج حساب في شجرة الحسابات</h3>", unsafe_allow_html=True)
     
+    # القائمة العلوية لتحديد نوع القائمة (ميزانية / قائمة دخل)
+    acc_type = st.selectbox("نوع الحساب الرئيسي:", ["ميزانية", "قائمة دخل"])
+    
+    # تغيير اللون بناءً على الاختيار كما في واجهتك الرسومية
+    if acc_type == "قائمة دخل":
+        st.markdown("<div style='background-color: #FFEB3B; padding: 10px; border-radius: 5px; text-align: center; color: black; font-weight: bold;'>حسابات قائمة الدخل (أصفر) 🟡</div>", unsafe_allow_html=True)
+    else:
+        st.markdown("<div style='background-color: #4CAF50; padding: 10px; border-radius: 5px; text-align: center; color: white; font-weight: bold;'>حسابات الميزانية (أخضر) 🟢</div>", unsafe_allow_html=True)
+        
     with st.form("account_tree_form", clear_on_submit=True):
         col_acc1, col_acc2, col_acc3 = st.columns(3)
         with col_acc1:
             acc_number = st.text_input("رقم الحساب (acc_id) - مثال: 10001:")
         with col_acc2:
-            account_title = st.text_input("عنوان/اسم الحساب في المنظومة (title):")
+            # تم تسمية المتغير بوضوح لضمان قراءته بشكل صحيح
+            account_name_input = st.text_input("اسم الحساب (Account Name):")
         with col_acc3:
             open_bal = st.number_input("الرصيد الافتتاحي (amount_num) $:", min_value=0.0, value=0.0, step=10.0)
             
-        col_class1, col_class2, col_name = st.columns(3)
+        col_class1, col_class2 = st.columns(2)
         with col_class1:
-            class_1 = st.selectbox("التصنيف الأول (class1):", ["إيرادات", "مصروفات", "أصول ثابتة", "أصول متداولة", "التزامات"])
+            class_1 = st.text_input("التصنيف الأول (class1) - مثال: أصول / إيرادات:")
         with col_class2:
-            class_2 = st.selectbox("التصنيف الثاني (class2):", ["مصروفات إدارية وعمومية", "إيرادات نشاط", "تكلفة مبيعات", "أخرى"])
-        with col_name:
-            actual_name = st.text_input("الاسم التفصيلي للحساب المحاسبي (acc_name):")
+            class_2 = st.text_input("التصنيف الثاني (class2) - مثال: أصول طويلة الأجل / مصروفات إدارية:")
             
-        acc_type = st.selectbox("قائمة دخول / حساب ميزانية عمومية (type):", ["حسابات قائمة الدخل (أصفر)", "حسابات الميزانية"])
-        
-        save_acc_btn = st.form_submit_button("💾 حفظ الحساب في الشجرة السحابية")
+        save_acc_btn = st.form_submit_button("💾 حفظ الحساب")
         
         if save_acc_btn:
-            if acc_number.strip() and account_title.strip():
-                # بناء هيكل البيانات ليتطابق حرفياً مع أعمدة جدول erp_finance لحل خطأ الـ NOT NULL
+            # فحص المدخلات والتأكد من عدم ترك خانات فارغة لتجنب Null Value
+            clean_acc_num = acc_number.strip()
+            clean_acc_name = account_name_input.strip()
+            
+            if clean_acc_num and clean_acc_name:
+                # 🛠️ إجبار حقل title و acc_name على أخذ القيمة المدخلة مباشرة لمنع الخطأ نهائياً
                 new_acc_payload = {
-                    "acc_id": acc_number.strip(),
-                    "title": account_title.strip(), 
-                    "acc_name": actual_name.strip() if actual_name.strip() else account_title.strip(),
+                    "acc_id": clean_acc_num,
+                    "title": clean_acc_name,        # 👈 هذا السطر يحل المشكلة مباشرة
+                    "acc_name": clean_acc_name,     # تكرارها لضمان تغذية العمودين بالبيانات
                     "amount_num": float(open_bal),
                     "type": acc_type,
-                    "class1": class_1,
-                    "class2": class_2
-                }
-                
-                if insert_account_to_erp(new_acc_payload):
-                    st.success(f"✅ تم حفظ الحساب [{account_title}] بنجاح في جدول erp_finance!")
-                    st.rerun()
-            else:
-                st.error("⚠️ يرجى ملء الحقول الإلزامية: رقم الحساب (acc_id) وعنوان الحساب (title) أولاً.")
-                
-    st.markdown("---")
-    st.markdown("#### 🔍 شجرة الحسابات الحالية المسترجعة سحابياً:")
-    
-    current_erp_accounts = load_accounts_from_erp()
-    if current_erp_accounts:
-        df_erp = pd.DataFrame(current_erp_accounts)
+                    "class1": class_1.strip() if class_1.strip() else "عام",
