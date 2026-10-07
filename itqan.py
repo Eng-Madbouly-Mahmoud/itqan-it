@@ -3,7 +3,7 @@ from datetime import datetime
 from supabase import create_client, Client
 
 # 🔑 إعدادات الاتصال بقاعدة بيانات Supabase السحابية
-SUPABASE_URL = "https://stejbrmfjreoguuxohsr.supabase.co"
+SUPABASE_URL = "https://supabase.co"
 SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN0ZWpicm1manJlb2d1dXhvaHNyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA2Nzc4ODUsImV4cCI6MjEwNjI1Mzg4NX0.mCmdj3d5ltZca-nGr7XEQPhBBsTFyGTXn2HOqr8l7M8"
 
 # تهيئة عميل Supabase لمرة واحدة في الجلسة
@@ -18,10 +18,11 @@ def load_data():
     try:
         response = supabase.table("tickets").select("*").order("id", desc=False).execute()
         tickets = []
-        for row in response.data:
-            ticket = row.copy()
-            ticket['ID'] = row['id']  # تحويل id الصغير إلى ID الكبير ليتوافق مع كودك
-            tickets.append(ticket)
+        if response.data:
+            for row in response.data:
+                ticket = row.copy()
+                ticket['ID'] = row['id']  # تحويل id الصغير إلى ID الكبير ليتوافق مع كودك
+                tickets.append(ticket)
         return tickets
     except Exception as e:
         st.error(f"خطأ في جلب البيانات من السيرفر: {e}")
@@ -140,7 +141,7 @@ with tab1:
                 
                 # حفظ التذكرة مباشرة في قاعدة بيانات Supabase السحابية أولاً
                 if insert_ticket(new_ticket):
-                    st.session_state.tickets.append(new_ticket)
+                    st.session_state.tickets = load_data()  # إعادة جلب البيانات لتحديث القائمة فوراً
                     st.success(f"🎉 تم تسجيل بلاغك بنجاح في قاعدة البيانات السحابية! رقم التذكرة هو: #{st.session_state.next_id}")
                     st.session_state.next_id += 1
                     st.rerun()
@@ -155,10 +156,10 @@ with tab2:
     if password == "1234": 
         st.success("🔓 تم تفعيل صلاحيات المهندس المسؤول.")
         
-        # نضمن دائماً تحديث البيانات المعروضة من السحاب مباشرة عند الدخول
+        # جلب أحدث البيانات من السيرفر السحابي مباشرة عند الدخول
         st.session_state.tickets = load_data()
         
-        if st.session_state.tickets:
+        if st.session_state.tickets and len(st.session_state.tickets) > 0:
             import pandas as pd
             df_report = pd.DataFrame(st.session_state.tickets)
             
@@ -205,8 +206,7 @@ with tab2:
                     "updated_at": updated_time
                 }
                 
-                # تنفيذ عملية التحديث السحابي الفعلي مع إصلاح المحاذاة والـ Spacing بالكامل
+                # تنفيذ عملية التحديث السحابي الفعلي
                 if update_ticket_in_db(selected_id, updated_fields):
                     with st.spinner("جاري تحديث السيرفر السحابي..."):
                         st.success(f"✅ تم تحديث التذكرة رقم #{selected_id} بنجاح في قاعدة البيانات!")
-                        st.session_state.tickets = load_data()
