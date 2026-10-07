@@ -3,7 +3,7 @@ from datetime import datetime
 from supabase import create_client, Client
 
 # 🔑 إعدادات الاتصال بقاعدة بيانات Supabase السحابية
-SUPABASE_URL = "https://stejbrmfjreoguuxohsr.supabase.co"
+SUPABASE_URL = "https://supabase.co"
 SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN0ZWpicm1manJlb2d1dXhvaHNyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA2Nzc4ODUsImV4cCI6MjEwNjI1Mzg4NX0.mCmdj3d5ltZca-nGr7XEQPhBBsTFyGTXn2HOqr8l7M8"
 
 # تهيئة عميل Supabase لمرة واحدة في الجلسة
@@ -16,7 +16,6 @@ supabase = get_supabase_client()
 # 📥 دالة جلب البيانات من قاعدة البيانات السحابية Supabase
 def load_data():
     try:
-        # 🛠️ تم إصلاح المسافة البادئة هنا في السطر 19 وما يليه
         response = supabase.table("tickets").select("*").order("id", desc=False).execute()
         tickets = []
         for row in response.data:
@@ -156,7 +155,7 @@ with tab2:
     if password == "1234": 
         st.success("🔓 تم تفعيل صلاحيات المهندس المسؤول.")
         
-        # نضمن دائماً تحديث البيانات المعروضة من السحاب مباشرة
+        # نضمن دائماً تحديث البيانات المعروضة من السحاب مباشرة عند الدخول
         st.session_state.tickets = load_data()
         
         if st.session_state.tickets:
@@ -167,10 +166,48 @@ with tab2:
             st.dataframe(df_report[["ID", "name", "dept", "issue", "status", "solved_by", "created_at", "updated_at"]], use_container_width=True)
             
             st.markdown("---")
-            st.markdown("### 🛠️ تحديث حالة تذكرة وإسنادها للمهندس:")
+            st.markdown("### 🛠️ تحديث حالة تذكرة وإسنادها للمهندس في Supabase:")
+            
             ticket_ids = [int(t['ID']) for t in st.session_state.tickets]
             selected_id = st.selectbox("اختر رقم التذكرة للتعديل:", ticket_ids)
             
-            it_engineer = st.text_input("👨‍💻 اسم المهندس القائم بالحل:")
-            # 🛠️ تم إكمال السطر المبتور وضبط الخيارات كاملة هنا:
-            new_status = st.selectbox("الحالة الجديدة للتذكرة:", ["Pending (قيد الانتظار)", "In Progress (جاري العمل)", "Solved (تم حل المشكلة)"])
+            # جلب البيانات الحالية للتذكرة المحددة لملء الخانات تلقائياً لراحة المهندس
+            current_ticket = next(t for t in st.session_state.tickets if int(t['ID']) == selected_id)
+            
+            # استخراج القيم الحالية أو وضع قيم افتراضية إذا كانت فارغة
+            current_engineer = current_ticket.get('solved_by', '')
+            if current_engineer == "لم تُحل بعد ⏳":
+                current_engineer = ""
+                
+            current_status = current_ticket.get('status', 'Pending (قيد الانتظار)')
+            status_options = ["Pending (قيد الانتظار)", "In Progress (جاري العمل)", "Solved (تم حل المشكلة)"]
+            
+            # عرض الحقول للمهندس للتعديل
+            it_engineer = st.text_input("👨‍💻 اسم المهندس القائم بالحل:", value=current_engineer)
+            new_status = st.selectbox(
+                "الحالة الجديدة للتذكرة:", 
+                options=status_options, 
+                index=status_options.index(current_status) if current_status in status_options else 0
+            )
+            
+            # زر الحفظ السحابي
+            save_changes = st.button("💾 حفظ التعديلات وتحديث السيرفر")
+            
+            if save_changes:
+                if it_engineer.strip() == "":
+                    engineer_name = "لم تُحل بعد ⏳"
+                else:
+                    engineer_name = it_engineer
+                
+                updated_time = datetime.now().strftime("%Y-%m-%d %I:%M %p")
+                
+                # تجهيز الحقول لإرسالها لـ Supabase (تأكد أن أسماء الأعمدة تطابق الموجود بالجدول)
+                updated_fields = {
+                    "status": new_status,
+                    "solved_by": engineer_name,
+                    "updated_at": updated_time
+                }
+                
+                # تنفيذ عملية التحديث الفعلي في السحاب
+                with st.spinner("جاري تحديث السيرفر السحابي..."):
+                    if update_ticket_in_db(selected_id, updated_fields):
