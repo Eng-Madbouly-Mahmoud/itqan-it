@@ -210,4 +210,23 @@ with tab2:
                 
                 # تنفيذ عملية التحديث الفعلي في السحاب
                 with st.spinner("جاري تحديث السيرفر السحابي..."):
-                    if update_ticket_in_db(selected_id, updated_fields):
+                                if save_changes:
+                if it_engineer.strip() == "":
+                    engineer_name = "لم تُحل بعد ⏳"
+                else:
+                    engineer_name = it_engineer
+                
+                updated_time = datetime.now().strftime("%Y-%m-%d %I:%M %p")
+                
+                updated_fields = {
+                    "status": new_status,
+                    "solved_by": engineer_name,
+                    "updated_at": updated_time
+                }
+                
+                # 🛠️ تأكد أن الكود بالأسفل مُزاح بمسافة بادئة إضافية (Tab أو 4 مسافات) ليكون تابعاً لشرط الـ if بالسطر 213
+                if update_ticket_in_db(selected_id, updated_fields):
+                    with st.spinner("جاري تحديث السيرفر السحابي..."):
+                        st.success(f"✅ تم تحديث التذكرة رقم #{selected_id} بنجاح في قاعدة البيانات!")
+                        st.session_state.tickets = load_data()
+                        st.rerun()
