@@ -1,201 +1,216 @@
 import streamlit as st
-import pandas as pd
 from datetime import datetime
+import pandas as pd
 from supabase import create_client, Client
 
-# ⚙️ إعدادات الصفحة الأساسية لنظام الـ ERP
-st.set_page_config(page_title="نظام ERP المتكامل", page_icon="💼", layout="wide")
+# 🔑 إعدادات الاتصال بقاعدة بيانات Supabase السحابية الفعالة لديك
+SUPABASE_URL = "https://supabase.co"
+SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN0ZWpicm1manJlb2d1dXhvaHNyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA2Nzc4ODUsImV4cCI6MjEwNjI1Mzg4NX0.mCmdj3d5ltZca-nGr7XEQPhBBsTFyGTXn2HOqr8l7M8"
 
-# 🔑 جلب مفاتيح الاتصال تلقائياً من نظام حماية Secrets الخاص بتطبيقك
-SUPABASE_URL = st.secrets["SUPABASE_URL"]
-SUPABASE_KEY = st.secrets["SUPABASE_KEY"]
-
+# تهيئة عميل Supabase لمرة واحدة في الجلسة
 @st.cache_resource
 def get_supabase_client() -> Client:
     return create_client(SUPABASE_URL, SUPABASE_KEY)
 
+# 🔄 استدعاء العميل وتخزينه في متغير للاستخدام في بقية الملف
 supabase = get_supabase_client()
 
-# 🔒 نظام التحقق من الصلاحيات وتثبيت الجلسة
-if "logged_in" not in st.session_state:
-    st.session_state["logged_in"] = False
-    st.session_state["user_role"] = None
+# =========================================================
+# 📥 دالات الموديول المالي المطورة (الحفظ، التحديث، والجلب)
+# =========================================================
 
-def login_page():
-    st.markdown("<h2 style='text-align: center; color: #1E3A8A;'>🔐 تسجيل الدخول لنظام الـ ERP الشامل</h2>", unsafe_allow_html=True)
-    
-    col1, col2, col3 = st.columns()
-    with col2:
-        with st.form("login_form"):
-            username = st.text_input("👤 اسم المستخدم (Username):")
-            password = st.text_input("🔑 كلمة المرور (Password):", type="password")
-            submit = st.form_submit_button("تسجيل الدخول للنظام")
-            
-            if submit:
-                if username == "admin" and password == "admin2026":
-                    st.session_state["logged_in"] = True
-                    st.session_state["user_role"] = "المدير العام"
-                    st.rerun()
-                elif username == "accountant" and password == "finance2026":
-                    st.session_state["logged_in"] = True
-                    st.session_state["user_role"] = "المحاسب"
-                    st.rerun()
-                else:
-                    st.error("❌ اسم المستخدم أو كلمة المرور غير صحيحة!")
+def insert_account_to_erp(acc_data):
+    try:
+        supabase.table("erp_finance").insert(acc_data).execute()
+        return True
+    except Exception as e:
+        st.error(f"خطأ في حفظ الحساب الجديد بجدول erp_finance: {e}")
+        return False
 
-# 📊 لوحة التحكم الرئيسية والأقسام الفعالة
-def main_dashboard():
-    with st.sidebar:
-        st.markdown(f"### 👨‍💻 المستخدم: {st.session_state['user_role']}")
-        st.markdown(f"📅 التاريخ: {datetime.now().strftime('%Y-%m-%d')}")
-        st.markdown("---")
-        if st.button("🚪 تسجيل الخروج من النظام"):
-            st.session_state["logged_in"] = False
-            st.session_state["user_role"] = None
-            st.rerun()
+def load_accounts_from_erp():
+    try:
+        response = supabase.table("erp_finance").select("*").order("acc_id", desc=False).execute()
+        return response.data
+    except Exception as e:
+        st.error(f"خطأ في جلب شجرة الحسابات: {e}")
+        return []
 
-    st.markdown("""
-        <div style='background-color: #1E3A8A; padding: 15px; border-radius: 8px; margin-bottom: 25px;'>
-            <h1 style='text-align: center; color: white; margin: 0;'>💼 Enterprise Resource Planning (ERP System)</h1>
+def insert_journal_entries(entries_list):
+    try:
+        supabase.table("erp_journal_entries").insert(entries_list).execute()
+        return True
+    except Exception as e:
+        st.error(f"خطأ في حفظ القيد المالي: {e}")
+        return False
+
+# =========================================================
+# 📥 دالات نظام التذاكر والدعم الفني الحالية
+# =========================================================
+def load_data():
+    try:
+        response = supabase.table("tickets").select("*").order("id", desc=False).execute()
+        tickets = []
+        for row in response.data:
+            ticket = row.copy()
+            ticket['ID'] = row['id']
+            tickets.append(ticket)
+        return tickets
+    except Exception as e:
+        st.error(f"خطأ في جلب البيانات من السيرفر: {e}")
+        return []
+
+def insert_ticket(new_ticket):
+    try:
+        db_data = {
+            "id": int(new_ticket["ID"]),
+            "name": new_ticket["name"],
+            "dept": new_ticket["dept"],
+            "issue": new_ticket["issue"],
+            "status": new_ticket["status"],
+            "solved_by": new_ticket["solved_by"],
+            "created_at": new_ticket["created_at"],
+            "updated_at": new_ticket["updated_at"]
+        }
+        supabase.table("tickets").insert(db_data).execute()
+        return True
+    except Exception as e:
+        st.error(f"خطأ في حفظ التذكرة: {e}")
+        return False
+
+# تهيئة المخازن الافتراضية للجلسة بنظام التذاكر
+if 'tickets' not in st.session_state:
+    st.session_state.tickets = load_data()
+
+if 'next_id' not in st.session_state:
+    if st.session_state.tickets:
+        max_id = max([int(t['ID']) for t in st.session_state.tickets])
+        st.session_state.next_id = max_id + 1
+    else:
+        st.session_state.next_id = 101
+
+# إعدادات الصفحة والأيقونة الرئيسية للموقع
+st.set_page_config(
+    page_title="الدكتور صلاح حسب الله - مركز الإدارة الشامل - شركة إتقان",
+    page_icon="⚖️",
+    layout="wide"
+)
+
+# =========================================================
+# 💻 التصميم والهيدر الأساسي للمنظومة
+# =========================================================
+st.markdown("""
+    <div style='background-color: #8C6239; padding: 25px; border-radius: 12px; margin-bottom: 5px; display: flex; align-items: center; justify-content: center; gap: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);'>
+        <div>
+            <h1 style='text-align: center; color: #F5EBE0; margin: 0; font-family: "Cairo", sans-serif; font-size: 32px; font-weight: bold;'>النظام السحابي الذكي المتكامل - شركة إتقان ⚖️</h1>
+            <p style='text-align: center; color: #E3D5CA; margin: 5px 0 0 0; font-size: 14px;'>لوحة إدارة البلاغات التقنية والموديول المحاسبي المطور بجوار بعضها البعض</p>
         </div>
-    """, unsafe_allow_html=True)
+    </div>
+""", unsafe_allow_html=True)
 
-    tab_home, tab_finance, tab_inventory, tab_sales, tab_hr = st.tabs([
-        "📈 لوحة المؤشرات العامة", 
-        "💰 إدارة الحسابات والمالية", 
-        "📦 إدارة المستودعات والمخازن", 
-        "🧾 الفواتير والمبيعات",
-        "👥 الموارد البشرية (HR)"
-    ])
+st.markdown("""
+    <style>
+    .stTabs [data-baseweb="tab-list"] { gap: 10px; }
+    .stTabs [data-baseweb="tab"] {
+        background-color: #E3D5CA; border-radius: 4px 4px 0px 0px; padding: 10px 20px; color: #4A3728; font-weight: bold;
+    }
+    .stTabs [aria-selected="true"] { 
+        background-color: #8C6239 !important; color: #F5EBE0 !important;
+    }
+    </style>
+""", unsafe_allow_html=True)
 
-    # 1️⃣ لوحة المؤشرات العامة
-    with tab_home:
-        st.subheader("📊 الأداء العام للمؤسسة")
-        kpi1, kpi2, kpi3, kpi4 = st.columns(4)
+# تقسيم واجهة المستخدم إلى التبويبات الخمسة المتوازية والمضبوطة هندسياً
+tab1, tab2, tab3, tab4, tab5 = st.tabs([
+    "📝 بوابة الدعم التقني", 
+    "🖥️ لوحة تحكم الـ IT", 
+    "🗂️ شجرة الحسابات وتحديثها", 
+    "💵 إدارة القيود والسندات اليومية",
+    "📖 كشف دفتر الأستاذ المساعد"
+])
+
+# 1️⃣ بوابة الموظفين (البلاغات)
+with tab1:
+    st.markdown("<h3 style='text-align: right; color: #8C6239;'>📥 تسجيل بلاغ عطل تقني جديد</h3>", unsafe_allow_html=True)
+    with st.form("ticket_form", clear_on_submit=True):
+        col_t1, col_t2 = st.columns(2)
+        with col_t1:
+            name = st.text_input("👤 اسم الموظف / المستشار بالكامل:")
+        with col_t2:
+            dept = st.selectbox("🏢 القسم / الإدارة التابع لها:", ["قسم الاداره العليا", "بنك مصر", "بنك الاهلي", "التجاري الدولي", "الادمن", "إدارة عامة", "أخرى"])
+        issue = st.text_area("⚠️ وصف العطل التقني بالتفصيل:")
+        submit = st.form_submit_button("🚀 إرسال التذكرة")
         
-        try:
-            fin_data = supabase.table("erp_finance").select("*").execute().data
-            inv_data = supabase.table("erp_inventory").select("*").execute().data
-            hr_data = supabase.table("erp_hr").select("*").execute().data
-            
-            total_rev = sum([float(f['amount']) for f in fin_data if f['type'] == 'إيرادات'])
-            total_exp = sum([float(f['amount']) for f in fin_data if f['type'] == 'مصروفات'])
-            total_items = sum([int(i['quantity']) for i in inv_data])
-            total_emps = len(hr_data)
-            
-            kpi1.metric("إجمالي الإيرادات السحابية", f"${total_rev:,.2f}")
-            kpi2.metric("إجمالي المصروفات المسجلة", f"${total_exp:,.2f}")
-            kpi3.metric("إجمالي قطع المخزون الحالية", f"{total_items} قطعة")
-            kpi4.metric("عدد الموظفين بالنظام", f"{total_emps} موظف")
-        except:
-            st.warning("جاري جلب المؤشرات الحية...")
-
-    # 2️⃣ إدارة الحسابات والمالية
-    with tab_finance:
-        st.subheader("💳 حركة القيود اليومية (الخزنة)")
-        col_form, col_view = st.columns()
-        with col_form:
-            st.markdown("### 📥 إضافة قيد مالي")
-            with st.form("finance_form", clear_on_submit=True):
-                title = st.text_input("البيان / الوصف:")
-                amount = st.number_input("المبلغ ($):", min_value=1.0)
-                trans_type = st.selectbox("نوع المعاملة:", ["إيرادات", "مصروفات"])
-                fin_submit = st.form_submit_button("حفظ المعاملة بالسحاب")
-                if fin_submit and title:
-                    supabase.table("erp_finance").insert({"title": title, "amount": amount, "type": trans_type}).execute()
-                    st.success("✅ تم حفظ السند المالي بنجاح!")
+        if submit:
+            if name.strip() and issue.strip():
+                current_time = datetime.now().strftime("%Y-%m-%d %I:%M %p")
+                new_ticket = {
+                    "ID": int(st.session_state.next_id), "name": name, "dept": dept, "issue": issue,
+                    "status": "Pending (قيد الانتظار)", "solved_by": "لم تُحل بعد ⏳", "created_at": current_time, "updated_at": "لم تُحدث بعد"
+                }
+                if insert_ticket(new_ticket):
+                    st.session_state.tickets.append(new_ticket)
+                    st.success(f"🎉 تم تسجيل بلاغك بنجاح! رقم التذكرة هو: #{st.session_state.next_id}")
+                    st.session_state.next_id += 1
                     st.rerun()
-        with col_view:
-            st.markdown("### 📋 كشف الحركة المالية الحالي")
-            res = supabase.table("erp_finance").select("*").order("id", desc=True).execute()
-            if res.data:
-                df = pd.DataFrame(res.data)
-                df.columns = ["رقم المعاملة", "البيان", "المبلغ", "النوع", "تاريخ القيد"]
-                st.dataframe(df, use_container_width=True)
 
-    # 3️⃣ إدارة المستودعات والمخازن
-    with tab_inventory:
-        st.subheader("📦 إضافة وإدارة المنتجات والمخزون")
-        col_inv_form, col_inv_view = st.columns()
-        with col_inv_form:
-            st.markdown("### 📥 تسجيل صنف جديد")
-            with st.form("inventory_form", clear_on_submit=True):
-                p_name = st.text_input("اسم المنتج / الصنف:")
-                p_qty = st.number_input("الكمية المتاحة:", min_value=1, step=1)
-                p_price = st.number_input("سعر الوحدة ($):", min_value=0.5)
-                inv_submit = st.form_submit_button("إضافة للمخزن السحابي")
-                if inv_submit and p_name:
-                    supabase.table("erp_inventory").insert({"product_name": p_name, "quantity": p_qty, "price": p_price}).execute()
-                    st.success("✅ تم إضافة الصنف للمستودع!")
-                    st.rerun()
-        with col_inv_view:
-            st.markdown("### 📋 جرد أصناف المخزن الحالية")
-            res_inv = supabase.table("erp_inventory").select("*").order("id", desc=True).execute()
-            if res_inv.data:
-                df_inv = pd.DataFrame(res_inv.data)
-                df_inv.columns = ["كود الصنف", "اسم المنتج", "الكمية", "سعر الوحدة", "آخر تحديث"]
-                st.dataframe(df_inv, use_container_width=True)
+# 2️⃣ لوحة تحكم الـ IT
+with tab2:
+    st.markdown("<h3 style='text-align: right; color: #8C6239;'>🖥️ شاشة إدارة الأعطال الحالية</h3>", unsafe_allow_html=True)
+    password = st.text_input("🔑 أدخل كلمة مرور الإدارة لتحديث التذاكر:", type="password")
+    if password == "1234":
+        st.success("🔓 تم تفعيل صلاحيات المهندس المسؤول.")
+        st.session_state.tickets = load_data()
+        if st.session_state.tickets:
+            df_report = pd.DataFrame(st.session_state.tickets)
+            st.dataframe(df_report[["ID", "name", "dept", "issue", "status", "solved_by", "created_at", "updated_at"]], use_container_width=True)
 
-    # 4️⃣ قسم المبيعات والفواتير
-    with tab_sales:
-        st.subheader("🧾 نظام الفواتير والمبيعات السريعة")
-        col_s_form, col_s_view = st.columns()
-        with col_s_form:
-            st.markdown("### 📥 إنشاء فاتورة بيع")
-            with st.form("sales_form", clear_on_submit=True):
-                c_name = st.text_input("اسم العميل:")
-                s_amount = st.number_input("القيمة الإجمالية للفاتورة ($):", min_value=1.0)
-                inv_date = st.date_input("تاريخ الفاتورة").strftime("%Y-%m-%d")
-                sales_submit = st.form_submit_button("إصدار الفاتورة وتثبيتها")
-                if sales_submit and c_name:
-                    supabase.table("erp_sales").insert({"client_name": c_name, "total_amount": s_amount, "invoice_date": inv_date}).execute()
-                    st.success("✅ تم إصدار وحفظ الفاتورة تلقائياً!")
-                    st.rerun()
-        with col_s_view:
-            st.markdown("### 📋 سجل الفواتير الصادرة")
-            res_sales = supabase.table("erp_sales").select("*").order("id", desc=True).execute()
-            if res_sales.data:
-                df_sales = pd.DataFrame(res_sales.data)
-                df_sales.columns = ["رقم الفاتورة", "اسم العميل", "إجمالي القيمة", "تاريخ الفاتورة", "وقت التسجيل بالسيرفر"]
-                st.dataframe(df_sales, use_container_width=True)
+# 3️⃣ تكويد شجرة الحسابات وحفظها (الخانات بجوار بعضها البعض + ميزة التعديل المباشر)
+with tab3:
+    st.markdown("<h3 style='text-align: right; color: #8C6239;'>🗂️ إدارة وهيكلة شجرة الحسابات العامة</h3>", unsafe_allow_html=True)
+    
+    # جلب الحسابات لخيارات الصيانة والتعديل
+    accounts_list = load_accounts_from_erp()
+    
+    col_mode, col_main_type = st.columns(2)
+    with col_mode:
+        operation_mode = st.radio("اختر العملية المراد تنفيذها:", ["إضافة حساب جديد ➕", "تعديل حساب قائم حالياً ✏️"], horizontal=True)
+    with col_main_type:
+        acc_type = st.selectbox("نوع الحساب الرئيسي:", ["ميزانية", "قائمة دخل"])
+    
+    if acc_type == "قائمة دخل":
+        st.markdown("<div style='background-color: #FFEB3B; padding: 6px; border-radius: 5px; text-align: center; color: black; font-weight: bold; margin-bottom:15px;'>حسابات قائمة الدخل (أصفر) 🟡</div>", unsafe_allow_html=True)
+    else:
+        st.markdown("<div style='background-color: #4CAF50; padding: 6px; border-radius: 5px; text-align: center; color: white; font-weight: bold; margin-bottom:15px;'>حسابات الميزانية (أخضر) 🟢</div>", unsafe_allow_html=True)
 
-    # 5️⃣ قسم الموارد البشرية (HR Module) الجديد المدمج
-    with tab_hr:
-        st.subheader("👥 إدارة الموظفين، الرواتب، والحضور والانصراف")
-        col_hr1, col_hr2 = st.columns()
-        
-        with col_hr1:
-            st.markdown("### 📝 تسجيل موظف جديد وضبط حالته اليومية")
-            with st.form("hr_form", clear_on_submit=True):
-                emp_name = st.text_input("👤 اسم الموظف ثلاثي:")
-                salary = st.number_input("💰 راتب الموظف الأساسي ($):", min_value=100)
-                attendance = st.selectbox("📌 حالة الحضور اليوم:", ["حاضر ✅", "غائب ❌"])
-                notes = st.text_input("📝 ملاحظات إضافية (مكافآت / خصومات / أذونات):")
-                hr_submit = st.form_submit_button("حفظ بيانات الموظف بالسحاب")
+    # حالة الإضافة
+    if operation_mode == "إضافة حساب جديد ➕":
+        with st.form("account_tree_form", clear_on_submit=True):
+            # جعل خانات المدخلات بجوار بعضها البعض تماماً في صف واحد متوازن
+            col1, col2, col3 = st.columns(3)
+            with col1:
+                acc_number = st.text_input("رقم الحساب (acc_id):", placeholder="مثال: 10001")
+            with col2:
+                account_name_input = st.text_input("اسم الحساب (Account Name):", placeholder="مثال: الخزينة الرئيسية")
+            with col3:
+                open_bal = st.number_input("الرصيد الافتتاحي (amount_num) $:", min_value=0.0, value=0.0, step=10.0)
                 
-                if hr_submit and emp_name:
-                    supabase.table("erp_hr").insert({
-                        "emp_name": emp_name, 
-                        "salary": salary, 
-                        "attendance_status": attendance, 
-                        "notes": notes
-                    }).execute()
-                    st.success(f"✅ تم حفظ وتحديث ملف الموظف {emp_name}!")
-                    st.rerun()
-                    
-        with col_hr2:
-            st.markdown("### 📋 كشف شؤون الموظفين والمسيرات")
-            res_hr = supabase.table("erp_hr").select("*").order("id", desc=True).execute()
-            if res_hr.data:
-                df_hr = pd.DataFrame(res_hr.data)
-                df_hr.columns = ["رقم الملف", "اسم الموظف", "الراتب الأساسي", "حالة الحضور اليوم", "ملاحظات وتعديلات", "آخر تحديث بالسيرفر"]
-                st.dataframe(df_hr, use_container_width=True)
-            else:
-                st.info("سجل الموظفين فارغ حالياً.")
-
-# تشغيل النظام
-if not st.session_state["logged_in"]:
-    login_page()
-else:
-    main_dashboard()
+            col4, col5 = st.columns(2)
+            with col4:
+                class_1 = st.selectbox("التصنيف الأول (class1):", ["أصول", "خصوم", "حقوق ملكية", "إيرادات", "مصروفات"])
+            with col5:
+                class_2 = st.selectbox("التصنيف الثاني (class2):", ["أصول متداولة", "أصول ثابتة", "مصروفات إدارية وعمومية", "إيرادات نشاط", "أخرى"])
+                
+            save_acc_btn = st.form_submit_button("💾 حفظ وإدراج الحساب بالشجرة")
+            
+            if save_acc_btn:
+                if acc_number.strip() and account_name_input.strip():
+                    new_acc_payload = {
+                        "acc_id": acc_number.strip(), "title": account_name_input.strip(), "acc_name": account_name_input.strip(),     
+                        "amount_num": float(open_bal), "type": acc_type, "class1": class_1, "class2": class_2
+                    }
+                    if insert_account_to_erp(new_acc_payload):
+                        st.success(f"✅ تم حفظ الحساب [{account_name_input}] بنجاح في قاعدة البيانات السحابية!")
+                        st.rerun()
+                else:
+                    st.error("⚠️ خطأ: يرجى كتابة رقم الحساب واسمه بالكامل.")
 
