@@ -16,12 +16,21 @@ supabase = get_supabase_client()
 # 📥 دالة جلب البيانات من قاعدة البيانات السحابية Supabase
 def load_data():
     try:
+        # جلب جميع السجلات المخزنة سابقاً بالترتيب
         response = supabase.table("tickets").select("*").order("id", desc=False).execute()
         tickets = []
         if response.data:
             for row in response.data:
                 ticket = row.copy()
-                ticket['ID'] = row['id']  # تحويل id الصغير إلى ID الكبير ليتوافق مع كودك
+                # تأمين وجود الحقول ومطابقتها للتنسيق البرمجي لمنع الاختفاء
+                ticket['ID'] = row.get('id', row.get('ID'))  
+                ticket['name'] = row.get('name', 'غير مسجل')
+                ticket['dept'] = row.get('dept', 'غير محدد')
+                ticket['issue'] = row.get('issue', '-')
+                ticket['status'] = row.get('status', 'Pending (قيد الانتظار)')
+                ticket['solved_by'] = row.get('solved_by', 'لم تُحل بعد ⏳')
+                ticket['created_at'] = row.get('created_at', '-')
+                ticket['updated_at'] = row.get('updated_at', '-')
                 tickets.append(ticket)
         return tickets
     except Exception as e:
@@ -63,7 +72,7 @@ if 'tickets' not in st.session_state:
 # ضبط الترقيم التلقائي للتذاكر بناءً على آخر تذكرة في السحاب
 if 'next_id' not in st.session_state:
     if st.session_state.tickets:
-        max_id = max([int(t['ID']) for t in st.session_state.tickets])
+        max_id = max([int(t['ID']) for t in st.session_state.tickets if t.get('ID') is not None])
         st.session_state.next_id = max_id + 1
     else:
         st.session_state.next_id = 101
@@ -139,9 +148,9 @@ with tab1:
                     "updated_at": "لم تُحدث بعد"
                 }
                 
-                # حفظ التذكرة مباشرة في قاعدة بيانات Supabase السحابية أولاً
+                # حفظ التذكرة في السحاب
                 if insert_ticket(new_ticket):
-                    st.session_state.tickets = load_data()  # إعادة جلب البيانات لتحديث القائمة فوراً
+                    st.session_state.tickets = load_data()  # إعادة تحميل فوري من السحاب
                     st.success(f"🎉 تم تسجيل بلاغك بنجاح في قاعدة البيانات السحابية! رقم التذكرة هو: #{st.session_state.next_id}")
                     st.session_state.next_id += 1
                     st.rerun()
@@ -156,23 +165,23 @@ with tab2:
     if password == "1234": 
         st.success("🔓 تم تفعيل صلاحيات المهندس المسؤول.")
         
-        # جلب أحدث البيانات من السيرفر السحابي مباشرة عند الدخول
+        # إجبار النظام على جلب أحدث البيانات المسجلة تاريخياً من السحاب مباشرة عند عرض التبويب
         st.session_state.tickets = load_data()
         
         if st.session_state.tickets and len(st.session_state.tickets) > 0:
             import pandas as pd
             df_report = pd.DataFrame(st.session_state.tickets)
             
-            st.markdown("### 📊 استخراج التقارير وقائمة البلاغات")
+            st.markdown("### 📊 استخراج التقارير وقائمة البلاغات التاريخية")
+            # عرض الحقول بمرونة تامة
             st.dataframe(df_report[["ID", "name", "dept", "issue", "status", "solved_by", "created_at", "updated_at"]], use_container_width=True)
             
             st.markdown("---")
             st.markdown("### 🛠️ تحديث حالة تذكرة وإسنادها للمهندس في Supabase:")
             
-            ticket_ids = [int(t['ID']) for t in st.session_state.tickets]
+            ticket_ids = [int(t['ID']) for t in st.session_state.tickets if t.get('ID') is not None]
             selected_id = st.selectbox("اختر رقم التذكرة للتعديل:", ticket_ids)
             
-            # جلب البيانات الحالية للتذكرة المحددة لملء الخانات تلقائياً
             current_ticket = next(t for t in st.session_state.tickets if int(t['ID']) == selected_id)
             
             current_engineer = current_ticket.get('solved_by', '')
@@ -189,7 +198,6 @@ with tab2:
                 index=status_options.index(current_status) if current_status in status_options else 0
             )
             
-            # زر الحفظ السحابي
             save_changes = st.button("💾 حفظ التعديلات وتحديث السيرفر")
             
             if save_changes:
@@ -198,15 +206,3 @@ with tab2:
                 else:
                     engineer_name = it_engineer
                 
-                updated_time = datetime.now().strftime("%Y-%m-%d %I:%M %p")
-                
-                updated_fields = {
-                    "status": new_status,
-                    "solved_by": engineer_name,
-                    "updated_at": updated_time
-                }
-                
-                # تنفيذ عملية التحديث السحابي الفعلي
-                if update_ticket_in_db(selected_id, updated_fields):
-                    with st.spinner("جاري تحديث السيرفر السحابي..."):
-                        st.success(f"✅ تم تحديث التذكرة رقم #{selected_id} بنجاح في قاعدة البيانات!")
