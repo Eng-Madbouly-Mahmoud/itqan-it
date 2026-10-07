@@ -42,10 +42,10 @@ def insert_ticket(new_ticket):
             "name": new_ticket["name"],
             "dept": new_ticket["dept"],
             "issue": new_ticket["issue"],
-            "status": new_ticket["status"],
-            "solved_by": new_ticket["solved_by"],
+            "status": "Pending (قيد الانتظار)",
+            "solved_by": "لم تُحل بعد ⏳",
             "created_at": new_ticket["created_at"],
-            "updated_at": new_ticket["updated_at"]
+            "updated_at": "لم تُحدث بعد"
         }
         supabase.table("tickets").insert(db_data).execute()
         return True
@@ -76,7 +76,7 @@ if 'next_id' not in st.session_state:
 
 # إعدادات الصفحة والأيقونة الرئيسية للموقع
 st.set_page_config(
-    page_title="الدكتور صلاح حسب الله - مركز الدعم الفني - شركة إتقان",
+    page_title="الدكتور صلاح حسب الله - - مركز الدعم الفني - شركة إتقان",
     page_icon="⚖️",
     layout="wide"
 )
@@ -195,11 +195,7 @@ with tab2:
             save_changes = st.button("💾 حفظ التعديلات وتحديث السيرفر")
             
             if save_changes:
-                if it_engineer.strip() == "":
-                    engineer_name = "لم تُحل بعد ⏳"
-                else:
-                    engineer_name = it_engineer
-                
+                engineer_name = "لم تُحل بعد ⏳" if it_engineer.strip() == "" else it_engineer
                 updated_time = datetime.now().strftime("%Y-%m-%d %I:%M %p")
                 
                 updated_fields = {
@@ -208,4 +204,6 @@ with tab2:
                     "updated_at": updated_time
                 }
                 
-                if update_ticket_in_db(selected_id, updated_fields):
+                # تحديث مستوًى خطي لتفادي مشكلة الـ Indentation تماماً
+                update_ticket_in_db(selected_id, updated_fields)
+                st.success(f"✅ تم تحديث التذكرة رقم #{selected_id} بنجاح!")
