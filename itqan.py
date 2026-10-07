@@ -6,23 +6,24 @@ from supabase import create_client, Client
 SUPABASE_URL = "https://supabase.co"
 SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN0ZWpicm1manJlb2d1dXhvaHNyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA2Nzc4ODUsImV4cCI6MjEwNjI1Mzg4NX0.mCmdj3d5ltZca-nGr7XEQPhBBsTFyGTXn2HOqr8l7M8"
 
-# تهيئة عميل Supabase لمرة واحدة في الجلسة
 @st.cache_resource
 def get_supabase_client() -> Client:
     return create_client(SUPABASE_URL, SUPABASE_KEY)
 
 supabase = get_supabase_client()
 
-# 📥 دالة جلب البيانات من قاعدة البيانات السحابية Supabase
+# 📥 دالة جلب البيانات التشخيصية
 def load_data():
     try:
-        # جلب جميع السجلات المخزنة سابقاً بالترتيب
         response = supabase.table("tickets").select("*").order("id", desc=False).execute()
+        
+        # 🔔 سطر تشخيصي مؤقت لعرض ما بداخل السيرفر مباشرة على الشاشة
+        st.write("🔍 استجابة السيرفر الفعلية البحتة:", response.data)
+        
         tickets = []
         if response.data:
             for row in response.data:
                 ticket = row.copy()
-                # تأمين وجود الحقول ومطابقتها للتنسيق البرمجي لمنع الاختفاء
                 ticket['ID'] = row.get('id', row.get('ID'))  
                 ticket['name'] = row.get('name', 'غير مسجل')
                 ticket['dept'] = row.get('dept', 'غير محدد')
@@ -34,7 +35,7 @@ def load_data():
                 tickets.append(ticket)
         return tickets
     except Exception as e:
-        st.error(f"خطأ في جلب البيانات من السيرفر: {e}")
+        st.error(f"🚨 خطأ فني أثناء جلب البيانات: {e}")
         return []
 
 # 💾 دالة حفظ تذكرة جديدة مباشرة في السحاب
@@ -148,9 +149,8 @@ with tab1:
                     "updated_at": "لم تُحدث بعد"
                 }
                 
-                # حفظ التذكرة في السحاب
                 if insert_ticket(new_ticket):
-                    st.session_state.tickets = load_data()  # إعادة تحميل فوري من السحاب
+                    st.session_state.tickets = load_data()  
                     st.success(f"🎉 تم تسجيل بلاغك بنجاح في قاعدة البيانات السحابية! رقم التذكرة هو: #{st.session_state.next_id}")
                     st.session_state.next_id += 1
                     st.rerun()
@@ -165,7 +165,6 @@ with tab2:
     if password == "1234": 
         st.success("🔓 تم تفعيل صلاحيات المهندس المسؤول.")
         
-        # إجبار النظام على جلب أحدث البيانات المسجلة تاريخياً من السحاب مباشرة عند عرض التبويب
         st.session_state.tickets = load_data()
         
         if st.session_state.tickets and len(st.session_state.tickets) > 0:
@@ -173,7 +172,6 @@ with tab2:
             df_report = pd.DataFrame(st.session_state.tickets)
             
             st.markdown("### 📊 استخراج التقارير وقائمة البلاغات التاريخية")
-            # عرض الحقول بمرونة تامة
             st.dataframe(df_report[["ID", "name", "dept", "issue", "status", "solved_by", "created_at", "updated_at"]], use_container_width=True)
             
             st.markdown("---")
@@ -205,4 +203,12 @@ with tab2:
                     engineer_name = "لم تُحل بعد ⏳"
                 else:
                     engineer_name = it_engineer
+                
+                updated_time = datetime.now().strftime("%Y-%m-%d %I:%M %p")
+                
+                updated_fields = {
+                    "status": new_status,
+                    "solved_by": engineer_name,
+                    "updated_at": updated_time
+                }
                 
