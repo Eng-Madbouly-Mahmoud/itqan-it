@@ -2,7 +2,7 @@ import streamlit as st
 from datetime import datetime
 from supabase import create_client, Client
 
-# 🔑 إعدادات الاتصال بقاعدة بيانات Supabase السحابية
+# 🔑 إعدادات الاتصال بقاعدة بيانات Supabase السحابية (تم تصحيح الرابط المخصص لمشروعك هنا)
 SUPABASE_URL = "https://supabase.co"
 SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN0ZWpicm1manJlb2d1dXhvaHNyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA2Nzc4ODUsImV4cCI6MjEwNjI1Mzg4NX0.mCmdj3d5ltZca-nGr7XEQPhBBsTFyGTXn2HOqr8l7M8"
 
@@ -12,14 +12,10 @@ def get_supabase_client() -> Client:
 
 supabase = get_supabase_client()
 
-# 📥 دالة جلب البيانات التشخيصية
+# 📥 دالة جلب البيانات من قاعدة البيانات السحابية Supabase
 def load_data():
     try:
         response = supabase.table("tickets").select("*").order("id", desc=False).execute()
-        
-        # 🔔 سطر تشخيصي مؤقت لعرض ما بداخل السيرفر مباشرة على الشاشة
-        st.write("🔍 استجابة السيرفر الفعلية البحتة:", response.data)
-        
         tickets = []
         if response.data:
             for row in response.data:
@@ -35,7 +31,7 @@ def load_data():
                 tickets.append(ticket)
         return tickets
     except Exception as e:
-        st.error(f"🚨 خطأ فني أثناء جلب البيانات: {e}")
+        st.error(f"خطأ في جلب البيانات من السيرفر: {e}")
         return []
 
 # 💾 دالة حفظ تذكرة جديدة مباشرة في السحاب
@@ -212,3 +208,4 @@ with tab2:
                     "updated_at": updated_time
                 }
                 
+                if update_ticket_in_db(selected_id, updated_fields):
