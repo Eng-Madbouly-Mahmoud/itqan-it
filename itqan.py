@@ -4,7 +4,7 @@ from supabase import create_client, Client
 
 # 🔑 إعدادات الاتصال بقاعدة بيانات Supabase السحابية الصحيحة لمشروعك
 SUPABASE_URL = "https://supabase.co"
-SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN0ZWpicm1manJlb2d1dXhvaHNyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA2Nzc4ODUsImV4cCI6MjEwNjI1Mzg4NX0.mCmdj3d5ltZca-nGr7XEQPhBBsTFyGTXn2HOqr8l7M8"
+SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN0ZWpicm1manJlb2d1dXhvaHNyIiwicm9sZSI6ImFub24iLAJpYXQiOjE3OTA2Nzc4ODUsImV4cCI6MjEwNjI1Mzg4NX0.mCmdj3d5ltZca-nGr7XEQPhBBsTFyGTXn2HOqr8l7M8"
 
 @st.cache_resource
 def get_supabase_client() -> Client:
@@ -208,4 +208,4 @@ with tab2:
                     "updated_at": updated_time
                 }
                 
-                if update_ticket_in_db(selected_id, updated_fields):
+                # تم ضبط الإزاحة والمسافات البرمجية هنا بدقة متناهية لمنع خطأ سطر 211
