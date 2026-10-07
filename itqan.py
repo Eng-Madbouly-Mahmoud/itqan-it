@@ -4,7 +4,7 @@ import pandas as pd
 from supabase import create_client, Client
 
 # 🔑 إعدادات الاتصال بقاعدة بيانات Supabase السحابية
-SUPABASE_URL = "https://supabase.co"
+SUPABASE_URL = "https://stejbrmfjreoguuxohsr.supabase.co"
 SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN0ZWpicm1manJlb2d1dXhvaHNyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA2Nzc4ODUsImV4cCI6MjEwNjI1Mzg4NX0.mCmdj3d5ltZca-nGr7XEQPhBBsTFyGTXn2HOqr8l7M8"
 
 # تهيئة عميل Supabase لمرة واحدة في الجلسة
@@ -140,7 +140,7 @@ if st.session_state.active_financial_tab == "شجرة الحسابات":
                 else:
                     st.error("⚠️ خطأ: يرجى كتابة رقم الحساب واسمه بالكامل.")
 
-    # حالة التعديل على الشجرة الأساسية
+    # حالة التعديل على الشجرة الأساسية (تم تكميلها وإصلاحها هنا)
     else:
         if not accounts_list:
             st.info("لا توجد حسابات مكوّدة بعد لتعديلها.")
@@ -190,5 +190,3 @@ elif st.session_state.active_financial_tab == "إضافة قيد":
     
     account_options = [f"{acc['acc_id']} - {acc['title']}" for acc in accounts_list]
     if not account_options:
-        st.warning("⚠️ لا توجد حسابات متوفرة! يرجى تكويد شجرة الحسابات أولاً.")
-    else:
