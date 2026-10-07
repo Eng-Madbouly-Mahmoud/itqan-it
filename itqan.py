@@ -76,7 +76,7 @@ if 'next_id' not in st.session_state:
 
 # إعدادات الصفحة والأيقونة الرئيسية للموقع
 st.set_page_config(
-    page_title="الدكتور صلاح حسب الله - - مركز الدعم الفني - شركة إتقان",
+    page_title="الدكتور صلاح حسب الله - مركز الدعام الفني - شركة إتقان",
     page_icon="⚖️",
     layout="wide"
 )
@@ -204,6 +204,5 @@ with tab2:
                     "updated_at": updated_time
                 }
                 
-                # تحديث مستوًى خطي لتفادي مشكلة الـ Indentation تماماً
                 update_ticket_in_db(selected_id, updated_fields)
                 st.success(f"✅ تم تحديث التذكرة رقم #{selected_id} بنجاح!")
