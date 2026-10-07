@@ -2,7 +2,7 @@ import streamlit as st
 from datetime import datetime
 from supabase import create_client, Client
 
-# 🔑 إعدادات الاتصال بقاعدة بيانات Supabase السحابية (تم تصحيح الرابط المخصص لمشروعك هنا)
+# 🔑 إعدادات الاتصال بقاعدة بيانات Supabase السحابية الصحيحة لمشروعك
 SUPABASE_URL = "https://supabase.co"
 SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN0ZWpicm1manJlb2d1dXhvaHNyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA2Nzc4ODUsImV4cCI6MjEwNjI1Mzg4NX0.mCmdj3d5ltZca-nGr7XEQPhBBsTFyGTXn2HOqr8l7M8"
 
