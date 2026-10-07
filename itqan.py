@@ -16,8 +16,8 @@ supabase = get_supabase_client()
 # 📥 دالة جلب البيانات من قاعدة البيانات السحابية Supabase
 def load_data():
     try:
-response = supabase.table("tickets").select("*").order("id", desc=False).execute()
-
+        # 🛠️ تم إصلاح المسافة البادئة هنا في السطر 19 وما يليه
+        response = supabase.table("tickets").select("*").order("id", desc=False).execute()
         tickets = []
         for row in response.data:
             ticket = row.copy()
@@ -172,22 +172,5 @@ with tab2:
             selected_id = st.selectbox("اختر رقم التذكرة للتعديل:", ticket_ids)
             
             it_engineer = st.text_input("👨‍💻 اسم المهندس القائم بالحل:")
-            new_status = st.selectbox("الحالة الجديدة للتذكرة:", ["Pending (قيد الانتظار)", "In Progress (جاري العمل)", "Solved (تم حل المشكلة بنجاح ✅)"])
-            
-            if st.button("💾 حفظ تحديث التذكرة"):
-                if it_engineer.strip():
-                    update_fields = {
-                        "status": new_status,
-                        "solved_by": it_engineer,
-                        "updated_at": datetime.now().strftime("%Y-%m-%d %I:%M %p")
-                    }
-                    # تحديث السحاب فوراً
-                    if update_ticket_in_db(selected_id, update_fields):
-                        st.success(f"✅ تم تحديث التذكرة رقم #{selected_id} بنجاح في قاعدة البيانات!")
-                        st.rerun()
-                else:
-                    st.error("❌ يرجى كتابة اسم المهندس المسؤول عن الحل أولاً!")
-        else:
-            st.info("💡 لا توجد أي تذاكر مسجلة في النظام حالياً.")
-    elif password != "":
-        st.error("❌ كلمة المرور غير صحيحة!")
+            # 🛠️ تم إكمال السطر المبتور وضبط الخيارات كاملة هنا:
+            new_status = st.selectbox("الحالة الجديدة للتذكرة:", ["Pending (قيد الانتظار)", "In Progress (جاري العمل)", "Solved (تم حل المشكلة)"])
