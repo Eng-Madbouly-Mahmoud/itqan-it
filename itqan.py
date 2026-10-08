@@ -56,7 +56,7 @@ def load_accounts_from_erp():
         return []
 
 def update_account_balance(acc_id, delta_amount):
-    """ تحديث رصيد الحساب تلقائياً عند ترحيل القيود المحاسبية """
+    """ تحديث رصيد الحساب عند ترحيل القيد المحاسبي """
     try:
         res = supabase.table("erp_finance").select("initial_balance").eq("acc_id", acc_id).execute()
         if res.data:
@@ -132,7 +132,7 @@ st.sidebar.markdown("### Business Central")
 st.sidebar.markdown(f"**المستخدم:** {st.session_state.current_user_role}")
 st.sidebar.markdown(f"**التاريخ:** {datetime.now().strftime('%Y-%m-%d')}")
 
-if st.sidebar.button("تسجيل الخروج", use_container_width=True):
+if st.sidebar.button("تسجيل الخروج", width="full"):
     st.session_state.authenticated = False
     st.rerun()
 
@@ -188,26 +188,26 @@ with erp_tab1:
     t_col1, t_col2, t_col3, t_col4 = st.columns(4)
 
     with t_col1:
-        if st.button("إدراج وتكويد حساب", use_container_width=True, type="primary" if st.session_state.active_financial_tab == "شجرة الحسابات" else "secondary"):
+        if st.button("إدراج وتكويد حساب", width="full", type="primary" if st.session_state.active_financial_tab == "شجرة الحسابات" else "secondary"):
             st.session_state.active_financial_tab = "شجرة الحسابات"
             st.rerun()
     with t_col2:
-        if st.button("تسجيل قيد محاسبي (General Journal)", use_container_width=True, type="primary" if st.session_state.active_financial_tab == "إضافة قيد" else "secondary"):
+        if st.button("تسجيل قيد محاسبي (General Journal)", width="full", type="primary" if st.session_state.active_financial_tab == "إضافة قيد" else "secondary"):
             st.session_state.active_financial_tab = "إضافة قيد"
             st.rerun()
     with t_col3:
-        if st.button("دفتر الأستاذ (General Ledger)", use_container_width=True, type="primary" if st.session_state.active_financial_tab == "الأستاذ المساعد" else "secondary"):
+        if st.button("دفتر الأستاذ (General Ledger)", width="full", type="primary" if st.session_state.active_financial_tab == "الأستاذ المساعد" else "secondary"):
             st.session_state.active_financial_tab = "الأستاذ المساعد"
             st.rerun()
     with t_col4:
-        if st.button("صيانة السجلات والشجرة", use_container_width=True, type="primary" if st.session_state.active_financial_tab == "لوحة الصيانة" else "secondary"):
+        if st.button("صيانة السجلات والشجرة", width="full", type="primary" if st.session_state.active_financial_tab == "لوحة الصيانة" else "secondary"):
             st.session_state.active_financial_tab = "لوحة الصيانة"
             st.rerun()
 
     st.markdown("---")
 
     # ---------------------------------------------------------
-    # TAB 1: بطاقة الحساب وشجرة الحسابات والبحث
+    # TAB 1: شجرة الحسابات والبحث
     # ---------------------------------------------------------
     if st.session_state.active_financial_tab == "شجرة الحسابات":
         
@@ -224,7 +224,7 @@ with erp_tab1:
             class1_options = ["أصول", "خصوم", "حقوق ملكية"]
             class2_options = ["اصول طويلة الاجل", "اصول ثابتة", "اذون خزانة", "اصول متداولة", "عملاء", "التقدية وما في حكمها", "راس المال", "الارباح المرحلة", "الموردين"]
 
-        # 🔍 إضافة تابة البحث التفاعلي المتقدم
+        # 🔍 تفعيل خيارات الإجراء
         tree_mode = st.radio("نوع الإجراء:", ["إضافة حساب جديد للشجرة", "تعديل حساب قائم", "🔍 البحث والتصفية المتقدمة في الحسابات"], horizontal=True)
 
         selected_acc_data = None
@@ -258,12 +258,11 @@ with erp_tab1:
                     df_search = df_search[df_search['class1'] == search_class]
 
                 st.markdown(f"**نتائج البحث ({len(df_search)} حساب):**")
-                st.dataframe(df_search[['acc_id', 'acc_name', 'initial_balance', 'acc_type', 'class1', 'class2']], use_container_width=True)
+                st.dataframe(df_search[['acc_id', 'acc_name', 'initial_balance', 'acc_type', 'class1', 'class2']], width="full")
             else:
                 st.warning("لا توجد حسابات مسجلة في شجرة الحسابات للبحث عنها.")
 
         else:
-            # استمارة إدخال وتعديل الحسابات على خط أفقي واحد منظم
             with st.form("accounting_tree_form", clear_on_submit=False):
                 col_f1, col_f2, col_f3, col_f4, col_f5 = st.columns([1.5, 2.5, 1.5, 2, 2])
                 
@@ -347,7 +346,7 @@ with erp_tab1:
                 format_dict["الرصيد الافتتاحي"] = "{:,.2f}"
 
             styled_df = df_display.style.apply(color_rows, axis=1).format(format_dict)
-            st.dataframe(styled_df, use_container_width=True, height=450)
+            st.dataframe(styled_df, width="full", height=450)
         else:
             st.info("لا توجد حسابات مسجلة حاليا.")
 
@@ -362,7 +361,6 @@ with erp_tab1:
         else:
             acc_dict = {f"{a['acc_id']} - {a['acc_name']}": a['acc_id'] for a in accounts_list}
 
-            # ترويسة القيد
             j_col1, j_col2, j_col3 = st.columns(3)
             with j_col1:
                 doc_no = st.text_input("رقم المستند / القيد:", value=f"JV-{datetime.now().strftime('%Y%m%d%H%M')}")
@@ -391,7 +389,6 @@ with erp_tab1:
             total_debit = 0.0
             total_credit = 0.0
 
-            # إدخال أطراف القيد ديناميكياً
             for idx in range(st.session_state.journal_rows_count):
                 c_acc, c_deb, c_cred, c_line_desc = st.columns([3, 2, 2, 3])
                 with c_acc:
@@ -412,7 +409,6 @@ with erp_tab1:
                     "desc": line_desc
                 })
 
-            # ملخص التوازن المحاسبي
             st.markdown("---")
             b_col1, b_col2, b_col3 = st.columns(3)
             b_col1.metric("إجمالي الطرف المدين", f"{total_debit:,.2f} ج.م")
@@ -422,7 +418,7 @@ with erp_tab1:
             if abs(diff) < 0.001 and (total_debit > 0):
                 b_col3.markdown("<div style='background-color:#C8E6C9; color:#1B5E20; padding:12px; border-radius:5px; text-align:center; font-weight:bold;'>✅ القيد متوازن ومستعد للترحيل</div>", unsafe_allow_html=True)
                 
-                if st.button("🚀 ترحيل القيد وتحديث الأرصدة (Post Journal)", type="primary", use_container_width=True):
+                if st.button("🚀 ترحيل القيد وتحديث الأرصدة (Post Journal)", type="primary", width="full"):
                     success_all = True
                     for line in journal_lines:
                         net_effect = line['debit'] - line['credit']
@@ -445,7 +441,7 @@ with erp_tab1:
         if accounts_list:
             acc_filter = st.selectbox("اختر الحساب لاستعراض الحركة التفصيلية (الأستاذ العام):", [f"{a['acc_id']} - {a['acc_name']}" for a in accounts_list])
             st.info(f"كشف حساب تفصيلي للحساب المختار: [{acc_filter}]")
-            st.dataframe(pd.DataFrame(accounts_list), use_container_width=True)
+            st.dataframe(pd.DataFrame(accounts_list), width="full")
         else:
             st.warning("لا توجد حركة مسجلة لعرضها.")
 
@@ -460,7 +456,7 @@ with erp_tab2:
     st.markdown("<h3 style='color: #0078D4;'>إدارة المستودعات والمخازن (Inventory)</h3>", unsafe_allow_html=True)
     inv_data = load_inventory_data()
     if inv_data:
-        st.dataframe(pd.DataFrame(inv_data), use_container_width=True)
+        st.dataframe(pd.DataFrame(inv_data), width="full")
     else:
         st.info("لا توجد بيانات مخزنية حاليا.")
 
@@ -471,7 +467,7 @@ with erp_tab3:
     st.markdown("<h3 style='color: #0078D4;'>الموارد البشرية (Human Resources)</h3>", unsafe_allow_html=True)
     hr_data = load_hr_data()
     if hr_data:
-        st.dataframe(pd.DataFrame(hr_data), use_container_width=True)
+        st.dataframe(pd.DataFrame(hr_data), width="full")
     else:
         st.info("لا توجد بيانات موظفين حاليا.")
 
@@ -482,6 +478,6 @@ with erp_tab4:
     st.markdown("<h3 style='color: #0078D4;'>المبيعات والعملاء (Sales & Customers)</h3>", unsafe_allow_html=True)
     sales_data = load_sales_data()
     if sales_data:
-        st.dataframe(pd.DataFrame(sales_data), use_container_width=True)
+        st.dataframe(pd.DataFrame(sales_data), width="full")
     else:
         st.info("لا توجد فواتير مبيعات مسجلة حاليا.")
