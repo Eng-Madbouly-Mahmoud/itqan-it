@@ -224,13 +224,12 @@ with erp_tab1:
             class1_options = ["أصول", "خصوم", "حقوق ملكية"]
             class2_options = ["اصول طويلة الاجل", "اصول ثابتة", "اذون خزانة", "اصول متداولة", "عملاء", "التقدية وما في حكمها", "راس المال", "الارباح المرحلة", "الموردين"]
 
-        # 🔍 إضافة خيار البحث المتقدم بجانب الإضافة والتعديل
+        # 🔍 خيار البحث بجانب إضافة وتعديل الحسابات
         tree_mode = st.radio("نوع الإجراء:", ["إضافة حساب جديد للشجرة", "تعديل حساب قائم", "🔍 البحث في الحسابات والتصنيفات"], horizontal=True)
 
         selected_acc_data = None
         selected_acc_id = None
 
-        # في حالة فتح وضع التعديل
         if tree_mode == "تعديل حساب قائم":
             if accounts_list:
                 acc_options = {f"{a['acc_id']} - {a['acc_name']}": a for a in accounts_list}
@@ -240,7 +239,6 @@ with erp_tab1:
             else:
                 st.warning("⚠️ لا توجد حسابات مسجلة لتعديلها.")
 
-        # 🔍 وضع البحث والتقارير
         if tree_mode == "🔍 البحث في الحسابات والتصنيفات":
             st.info("🔎 يمكنك الاستعلام والبحث المتقدم في كافة الحسابات المسجلة بالأرقام والأسماء:")
             s_col1, s_col2 = st.columns([3, 1])
@@ -265,7 +263,7 @@ with erp_tab1:
                 st.warning("لا توجد حسابات في النظام للبحث فيها.")
 
         else:
-            # استمارة الإضافة / التعديل بخط أفقي موحد
+            # استمارة الإضافة والتعديل على سطر واحد أفقي
             with st.form("accounting_tree_form", clear_on_submit=False):
                 col_f1, col_f2, col_f3, col_f4, col_f5 = st.columns([1.5, 2.5, 1.5, 2, 2])
                 
@@ -354,7 +352,7 @@ with erp_tab1:
             st.info("لا توجد حسابات مسجلة حاليا.")
 
     # ---------------------------------------------------------
-    # TAB 2: تسجيل قيد محاسبي احترافي (General Journal)
+    # TAB 2: تسجيل قيد محاسبي مفعل ومكتمل (General Journal)
     # ---------------------------------------------------------
     elif st.session_state.active_financial_tab == "إضافة قيد":
         st.markdown("<h4 style='color: #0078D4;'>تسجيل قيد محاسبي يومية عامة (General Journal Batch)</h4>", unsafe_allow_html=True)
@@ -364,7 +362,7 @@ with erp_tab1:
         else:
             acc_dict = {f"{a['acc_id']} - {a['acc_name']}": a['acc_id'] for a in accounts_list}
 
-            # ترويسة القيد
+            # بيانات ترويسة القيد
             j_col1, j_col2, j_col3 = st.columns(3)
             with j_col1:
                 doc_no = st.text_input("رقم المستند / القيد:", value=f"JV-{datetime.now().strftime('%Y%m%d%H%M')}")
@@ -373,9 +371,9 @@ with erp_tab1:
             with j_col3:
                 journal_desc = st.text_input("البيان العام للقيد:", value="قيد تسوية / حركة يومية عامة")
 
+            st.markdown("---")
             st.markdown("##### أطراف القيد المحاسبي (Journal Lines)")
 
-            # بناء جدول الإدخال الديناميكي
             if 'journal_rows_count' not in st.session_state:
                 st.session_state.journal_rows_count = 2
 
@@ -393,6 +391,7 @@ with erp_tab1:
             total_debit = 0.0
             total_credit = 0.0
 
+            # بناء جدول الإدخال الديناميكي
             for idx in range(st.session_state.journal_rows_count):
                 c_acc, c_deb, c_cred, c_line_desc = st.columns([3, 2, 2, 3])
                 with c_acc:
@@ -413,7 +412,7 @@ with erp_tab1:
                     "desc": line_desc
                 })
 
-            # ملخص التوازن المحاسبي
+            # ملخص ومؤشر توازن القيد
             st.markdown("---")
             b_col1, b_col2, b_col3 = st.columns(3)
             b_col1.metric("إجمالي الطرف المدين", f"{total_debit:,.2f} ج.م")
@@ -421,7 +420,7 @@ with erp_tab1:
             
             diff = total_debit - total_credit
             if abs(diff) < 0.001 and (total_debit > 0):
-                b_col3.markdown("<div style='background-color:#C8E6C9; color:#1B5E20; padding:15px; border-radius:5px; text-align:center; font-weight:bold;'>✅ القيد متوازن ومستعد للترحيل</div>", unsafe_allow_html=True)
+                b_col3.markdown("<div style='background-color:#C8E6C9; color:#1B5E20; padding:12px; border-radius:5px; text-align:center; font-weight:bold;'>✅ القيد متوازن ومستعد للترحيل</div>", unsafe_allow_html=True)
                 
                 if st.button("🚀 ترحيل القيد وتحديث الأرصدة (Post Journal)", type="primary", use_container_width=True):
                     success_all = True
@@ -432,11 +431,11 @@ with erp_tab1:
                                 success_all = False
                     
                     if success_all:
-                        st.success(f"🎉 تم ترحيل القيد رقم [{doc_no}] بنجاح وتحديث أرصدة الحسابات!")
+                        st.success(f"🎉 تم ترحيل القيد رقم [{doc_no}] بنجاح وتحديث أرصدة الحسابات في قاعدة البيانات!")
                         st.session_state.journal_rows_count = 2
                         st.rerun()
             else:
-                b_col3.markdown(f"<div style='background-color:#FFCDD2; color:#B71C1C; padding:15px; border-radius:5px; text-align:center; font-weight:bold;'>⚠️ القيد غير متوازن | الفرق: {diff:,.2f}</div>", unsafe_allow_html=True)
+                b_col3.markdown(f"<div style='background-color:#FFCDD2; color:#B71C1C; padding:12px; border-radius:5px; text-align:center; font-weight:bold;'>⚠️ القيد غير متوازن | الفرق: {diff:,.2f}</div>", unsafe_allow_html=True)
 
     # ---------------------------------------------------------
     # TAB 3 & 4: الأستاذ المساعد والصيانة
