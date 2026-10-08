@@ -56,7 +56,7 @@ def load_accounts_from_erp():
         return []
 
 def update_account_balance(acc_id, delta_amount):
-    """ تحديث رصيد الحساب عند ترحيل القيد المحاسبي """
+    """ تحديث رصيد الحساب تلقائياً عند ترحيل القيود المحاسبية """
     try:
         res = supabase.table("erp_finance").select("initial_balance").eq("acc_id", acc_id).execute()
         if res.data:
@@ -207,7 +207,7 @@ with erp_tab1:
     st.markdown("---")
 
     # ---------------------------------------------------------
-    # TAB 1: شجرة الحسابات والبحث
+    # TAB 1: بطاقة الحساب وشجرة الحسابات والبحث
     # ---------------------------------------------------------
     if st.session_state.active_financial_tab == "شجرة الحسابات":
         
@@ -224,8 +224,8 @@ with erp_tab1:
             class1_options = ["أصول", "خصوم", "حقوق ملكية"]
             class2_options = ["اصول طويلة الاجل", "اصول ثابتة", "اذون خزانة", "اصول متداولة", "عملاء", "التقدية وما في حكمها", "راس المال", "الارباح المرحلة", "الموردين"]
 
-        # 🔍 خيار البحث بجانب إضافة وتعديل الحسابات
-        tree_mode = st.radio("نوع الإجراء:", ["إضافة حساب جديد للشجرة", "تعديل حساب قائم", "🔍 البحث في الحسابات والتصنيفات"], horizontal=True)
+        # 🔍 إضافة تابة البحث التفاعلي المتقدم
+        tree_mode = st.radio("نوع الإجراء:", ["إضافة حساب جديد للشجرة", "تعديل حساب قائم", "🔍 البحث والتصفية المتقدمة في الحسابات"], horizontal=True)
 
         selected_acc_data = None
         selected_acc_id = None
@@ -239,13 +239,13 @@ with erp_tab1:
             else:
                 st.warning("⚠️ لا توجد حسابات مسجلة لتعديلها.")
 
-        if tree_mode == "🔍 البحث في الحسابات والتصنيفات":
-            st.info("🔎 يمكنك الاستعلام والبحث المتقدم في كافة الحسابات المسجلة بالأرقام والأسماء:")
+        if tree_mode == "🔍 البحث والتصفية المتقدمة في الحسابات":
+            st.info("🔎 البحث السريع في شجرة الحسابات بالأرقام أو الأسماء:")
             s_col1, s_col2 = st.columns([3, 1])
             with s_col1:
-                search_query = st.text_input("أدخل رقم الحساب أو جزء من اسمه للبحث السريع:", placeholder="مثال: 10001 أو أصول")
+                search_query = st.text_input("أدخل رقم الحساب أو اسم الحساب للبحث المباشر:", placeholder="مثال: 10001 أو أصول")
             with s_col2:
-                search_class = st.selectbox("تصفية بالتصنيف:", ["الكل"] + class1_options)
+                search_class = st.selectbox("تصفية بحسب التصنيف:", ["الكل"] + class1_options)
 
             if accounts_list:
                 df_search = pd.DataFrame(accounts_list)
@@ -260,10 +260,10 @@ with erp_tab1:
                 st.markdown(f"**نتائج البحث ({len(df_search)} حساب):**")
                 st.dataframe(df_search[['acc_id', 'acc_name', 'initial_balance', 'acc_type', 'class1', 'class2']], use_container_width=True)
             else:
-                st.warning("لا توجد حسابات في النظام للبحث فيها.")
+                st.warning("لا توجد حسابات مسجلة في شجرة الحسابات للبحث عنها.")
 
         else:
-            # استمارة الإضافة والتعديل على سطر واحد أفقي
+            # استمارة إدخال وتعديل الحسابات على خط أفقي واحد منظم
             with st.form("accounting_tree_form", clear_on_submit=False):
                 col_f1, col_f2, col_f3, col_f4, col_f5 = st.columns([1.5, 2.5, 1.5, 2, 2])
                 
@@ -352,17 +352,17 @@ with erp_tab1:
             st.info("لا توجد حسابات مسجلة حاليا.")
 
     # ---------------------------------------------------------
-    # TAB 2: تسجيل قيد محاسبي مفعل ومكتمل (General Journal)
+    # TAB 2: تسجيل قيد محاسبي مفعل كاملاً (General Journal)
     # ---------------------------------------------------------
     elif st.session_state.active_financial_tab == "إضافة قيد":
-        st.markdown("<h4 style='color: #0078D4;'>تسجيل قيد محاسبي يومية عامة (General Journal Batch)</h4>", unsafe_allow_html=True)
+        st.markdown("<h4 style='color: #0078D4;'>تسجيل قيد محاسبي - دفتر اليومية العامة (General Journal Batch)</h4>", unsafe_allow_html=True)
         
         if not accounts_list:
             st.warning("⚠️ يرجى إضافة حسابات أولاً في شجرة الحسابات لتتمكن من تسجيل القيود المحاسبية.")
         else:
             acc_dict = {f"{a['acc_id']} - {a['acc_name']}": a['acc_id'] for a in accounts_list}
 
-            # بيانات ترويسة القيد
+            # ترويسة القيد
             j_col1, j_col2, j_col3 = st.columns(3)
             with j_col1:
                 doc_no = st.text_input("رقم المستند / القيد:", value=f"JV-{datetime.now().strftime('%Y%m%d%H%M')}")
@@ -391,7 +391,7 @@ with erp_tab1:
             total_debit = 0.0
             total_credit = 0.0
 
-            # بناء جدول الإدخال الديناميكي
+            # إدخال أطراف القيد ديناميكياً
             for idx in range(st.session_state.journal_rows_count):
                 c_acc, c_deb, c_cred, c_line_desc = st.columns([3, 2, 2, 3])
                 with c_acc:
@@ -412,7 +412,7 @@ with erp_tab1:
                     "desc": line_desc
                 })
 
-            # ملخص ومؤشر توازن القيد
+            # ملخص التوازن المحاسبي
             st.markdown("---")
             b_col1, b_col2, b_col3 = st.columns(3)
             b_col1.metric("إجمالي الطرف المدين", f"{total_debit:,.2f} ج.م")
@@ -438,15 +438,20 @@ with erp_tab1:
                 b_col3.markdown(f"<div style='background-color:#FFCDD2; color:#B71C1C; padding:12px; border-radius:5px; text-align:center; font-weight:bold;'>⚠️ القيد غير متوازن | الفرق: {diff:,.2f}</div>", unsafe_allow_html=True)
 
     # ---------------------------------------------------------
-    # TAB 3 & 4: الأستاذ المساعد والصيانة
+    # TAB 3 & 4: دفتر الأستاذ العام وتدقيق السجلات
     # ---------------------------------------------------------
     elif st.session_state.active_financial_tab == "الأستاذ المساعد":
-        st.markdown("<h4 style='color: #0078D4;'>دفتر الأستاذ (General Ledger Entries)</h4>", unsafe_allow_html=True)
-        st.info("قسم عرض الحركة المالية التفصيلية واستعراض دفتر الأستاذ العام لكل حساب.")
+        st.markdown("<h4 style='color: #0078D4;'>دفتر الأستاذ العام (General Ledger Entries)</h4>", unsafe_allow_html=True)
+        if accounts_list:
+            acc_filter = st.selectbox("اختر الحساب لاستعراض الحركة التفصيلية (الأستاذ العام):", [f"{a['acc_id']} - {a['acc_name']}" for a in accounts_list])
+            st.info(f"كشف حساب تفصيلي للحساب المختار: [{acc_filter}]")
+            st.dataframe(pd.DataFrame(accounts_list), use_container_width=True)
+        else:
+            st.warning("لا توجد حركة مسجلة لعرضها.")
 
     elif st.session_state.active_financial_tab == "لوحة الصيانة":
-        st.markdown("<h4 style='color: #D32F2F;'>لوحة الصيانة وتعديل البيانات</h4>", unsafe_allow_html=True)
-        st.warning("قسم الصيانة وإدارة البيانات وتدقيق الحسابات.")
+        st.markdown("<h4 style='color: #D32F2F;'>لوحة الصيانة وتدقيق السجلات</h4>", unsafe_allow_html=True)
+        st.warning("قسم صيانة البيانات وإدارة شجرة الحسابات.")
 
 # =========================================================
 # 2️⃣ موديول المخازن
